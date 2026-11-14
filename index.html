@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>失落記憶的地下迴廊｜高二英文 TRPG 完全體</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet" />
+  <style>
+    :root { color-scheme: dark; }
+    body {
+      font-family: 'Inter', 'Noto Sans TC', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #0b0f17;
+      color: #e6edf3;
+      overflow-x: hidden;
+    }
+    .rpg-card {
+      background: linear-gradient(180deg, rgba(22, 27, 38, 0.96) 0%, rgba(15, 19, 28, 0.98) 100%);
+      border: 1px solid rgba(212, 175, 55, 0.25);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+    }
+    .story-box {
+      background: rgba(13, 17, 23, 0.85);
+      border-left: 3px solid #38bdf8;
+    }
+    .vocab-chip {
+      border-bottom: 1.5px dashed #f59e0b;
+      color: #fcd34d;
+      cursor: pointer;
+      padding: 0 2px;
+      border-radius: 3px;
+      transition: background-color 0.15s ease;
+    }
+    .vocab-chip:hover, .vocab-chip:focus {
+      background-color: rgba(245, 158, 11, 0.18);
+      outline: none;
+    }
+    .option-btn { transition: all 0.16s ease; }
+    .option-btn:hover:not(:disabled) {
+      transform: translateY(-1px);
+      border-color: rgba(56, 189, 248, 0.7);
+      background-color: rgba(56, 189, 248, 0.08);
+    }
+    @keyframes fadeSlideIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in { animation: fadeSlideIn 0.28s ease-out forwards; }
+    @keyframes diceSpin {
+      0% { transform: rotate(0deg) scale(1); }
+      25% { transform: rotate(90deg) scale(1.12); }
+      50% { transform: rotate(180deg) scale(0.95); }
+      75% { transform: rotate(270deg) scale(1.12); }
+      100% { transform: rotate(360deg) scale(1); }
+    }
+    .animate-dice { animation: diceSpin 0.45s linear infinite; }
+  </style>
+</head>
+<body class="min-h-screen pb-16 selection:bg-amber-500/30 selection:text-amber-200">
+  <header class="sticky top-0 z-40 border-b border-slate-800/90 bg-[#0b0f17]/95 backdrop-blur-md">
+    <div class="max-w-3xl mx-auto px-3 sm:px-5 py-2.5">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div class="flex items-center gap-2 flex-wrap">
+          <span class="text-amber-400 font-bold text-sm sm:text-base tracking-wide">🎲 地下迴廊 TRPG</span>
+          <span id="hud-class" class="text-[11px] px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">未選職業</span>
+          <span id="hud-stage" class="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-sky-300 border border-slate-700">序章準備</span>
+        </div>
+        <div class="flex items-center gap-1.5 sm:gap-2">
+          <button id="btn-codex" type="button" class="min-h-[36px] px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs sm:text-sm text-amber-300 border border-amber-500/30 flex items-center gap-1 cursor-pointer">
+            <span>📖</span><span>圖鑑 & 錯題</span>
+            <span id="hud-mistake-badge" class="hidden ml-0.5 px-1.5 py-0.2 text-[11px] rounded-full bg-rose-600 text-white font-semibold">0</span>
+          </button>
+          <button id="btn-inventory" type="button" class="min-h-[36px] px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs sm:text-sm text-emerald-300 border border-emerald-500/30 flex items-center gap-1 cursor-pointer">
+            <span>🎒</span><span>背包 (<span id="hud-inv-count">1</span>)</span>
+          </button>
+          <button id="btn-mute" type="button" aria-label="切換音效" class="min-h-[36px] px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs sm:text-sm text-slate-300 border border-slate-700 cursor-pointer">🔊</button>
+        </div>
+      </div>
+      <div class="grid grid-cols-3 gap-2 sm:gap-3 mt-2 text-xs">
+        <div class="bg-slate-900/90 rounded-lg p-1.5 border border-slate-800">
+          <div class="flex justify-between text-rose-300 font-medium mb-1"><span>❤️ HP</span><span id="hud-hp-text">100 / 100</span></div>
+          <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden"><div id="hud-hp-bar" class="h-full bg-gradient-to-r from-rose-600 to-rose-400 transition-all duration-300" style="width: 100%"></div></div>
+        </div>
+        <div class="bg-slate-900/90 rounded-lg p-1.5 border border-slate-800">
+          <div class="flex justify-between text-violet-300 font-medium mb-1"><span>🔮 理智值</span><span id="hud-san-text">90 / 100</span></div>
+          <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden"><div id="hud-san-bar" class="h-full bg-gradient-to-r from-violet-600 to-fuchsia-400 transition-all duration-300" style="width: 90%"></div></div>
+        </div>
+        <div class="bg-slate-900/90 rounded-lg p-1.5 border border-slate-800">
+          <div class="flex justify-between text-amber-300 font-medium mb-1"><span>✨ 經驗值</span><span id="hud-xp-text">0 XP</span></div>
+          <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden"><div id="hud-xp-bar" class="h-full bg-gradient-to-r from-amber-500 to-yellow-300 transition-all duration-300" style="width: 0%"></div></div>
+        </div>
+      </div>
+      <div class="flex flex-wrap items-center justify-between gap-2 pt-2">
+        <div class="flex items-center gap-1.5 text-[11px]">
+          <span class="text-slate-400">🧪 消耗品：</span>
+          <button id="quick-elixir" type="button" class="px-2 py-0.5 rounded bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 cursor-pointer">解毒藥水 (<span id="cnt-elixir">1</span>)</button>
+          <span class="px-2 py-0.5 rounded bg-sky-500/15 text-sky-300 border border-sky-500/30">🧭 50/50 羅盤 (<span id="cnt-compass">1</span>)</span>
+          <span class="px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30">📜 透視卷軸 (<span id="cnt-scroll">1</span>)</span>
+        </div>
+      </div>
+      <nav aria-label="章節快速跳轉" class="flex items-center gap-1.5 overflow-x-auto pt-2 pb-0.5 text-[11px] sm:text-xs">
+        <button type="button" data-nav-screen="title" class="nav-jump-btn shrink-0 px-2.5 py-1 rounded-md bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 cursor-pointer">首頁</button>
+        <button type="button" data-nav-screen="act1" class="nav-jump-btn shrink-0 px-2.5 py-1 rounded-md bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 cursor-pointer">Act I 畫廊</button>
+        <button type="button" data-nav-screen="hub" class="nav-jump-btn shrink-0 px-2.5 py-1 rounded-md bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 cursor-pointer">Act II 三門</button>
+        <button type="button" data-nav-screen="act3" class="nav-jump-btn shrink-0 px-2.5 py-1 rounded-md bg-slate-900 hover:bg-slate-800 text-amber-300 border border-amber-500/30 cursor-pointer">Act III 午夜列車(U7-8)</button>
+        <button type="button" data-nav-screen="act4" class="nav-jump-btn shrink-0 px-2.5 py-1 rounded-md bg-slate-900 hover:bg-slate-800 text-emerald-300 border border-emerald-500/30 cursor-pointer">Act IV 能量飲(U9)</button>
+        <button type="button" data-nav-screen="act5" class="nav-jump-btn shrink-0 px-2.5 py-1 rounded-md bg-slate-900 hover:bg-slate-800 text-fuchsia-300 border border-fuchsia-500/30 cursor-pointer">Act V 包浩斯(U10-11)</button>
+      </nav>
+    </div>
+  </header>
+
+  <main id="app-main" class="max-w-3xl mx-auto px-3 sm:px-5 pt-5"></main>
+
+  <div id="toast-box" class="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 transition-opacity duration-200 max-w-sm w-[90%]">
+    <div id="toast-inner" class="px-4 py-2.5 rounded-xl bg-slate-900/95 border border-amber-400/50 text-amber-200 text-sm text-center shadow-2xl"></div>
+  </div>
+
+  <div id="dice-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
+    <div class="rpg-card rounded-2xl max-w-md w-full p-6 text-center space-y-4 animate-fade-in">
+      <div class="text-xs font-semibold uppercase tracking-widest text-sky-300" id="dice-context-label">TRPG d20 檢定</div>
+      <div class="flex justify-center py-2">
+        <div id="dice-visual" class="w-24 h-24 rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-700 border-2 border-amber-400 flex items-center justify-center shadow-2xl">
+          <span id="dice-number" class="text-4xl font-extrabold text-white">20</span>
+        </div>
+      </div>
+      <div id="dice-formula" class="text-xs text-slate-400 font-mono">擲骰中...</div>
+      <h3 id="dice-verdict" class="text-xl font-bold text-amber-300">準備檢定</h3>
+      <p id="dice-outcome" class="text-sm text-slate-200 leading-relaxed"></p>
+      <button id="dice-close" type="button" class="hidden w-full min-h-[46px] rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-sm cursor-pointer">繼續冒險 →</button>
+    </div>
+  </div>
+
+  <div id="vocab-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+    <div class="rpg-card rounded-2xl max-w-md w-full p-5 animate-fade-in">
+      <div class="flex items-start justify-between gap-3 mb-2">
+        <div>
+          <span id="vm-tag" class="text-[11px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">單字解析</span>
+          <h3 id="vm-word" class="text-xl font-bold text-white mt-1.5"></h3>
+        </div>
+        <button id="vm-close" type="button" class="min-w-[36px] min-h-[36px] rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 cursor-pointer">✕</button>
+      </div>
+      <p id="vm-meaning" class="text-amber-200 font-medium text-sm mb-3"></p>
+      <div class="space-y-2 text-xs sm:text-sm text-slate-300 bg-slate-900/80 p-3 rounded-xl border border-slate-800">
+        <div><span class="text-sky-400 font-semibold">字根字首拆解：</span><span id="vm-morph"></span></div>
+        <div><span class="text-emerald-400 font-semibold">段考高頻語塊：</span><span id="vm-chunk" class="font-mono text-emerald-200"></span></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="inv-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+    <div class="rpg-card rounded-2xl max-w-md w-full p-5 max-h-[82vh] flex flex-col animate-fade-in">
+      <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-800">
+        <h3 class="text-lg font-bold text-emerald-300">🎒 冒險者背包與裝備</h3>
+        <button id="inv-close" type="button" class="min-w-[36px] min-h-[36px] rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 cursor-pointer">✕</button>
+      </div>
+      <div id="inv-list" class="space-y-2.5 overflow-y-auto pr-1"></div>
+    </div>
+  </div>
+
+  <div id="codex-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
+    <div class="rpg-card rounded-2xl max-w-xl w-full p-5 max-h-[85vh] flex flex-col animate-fade-in">
+      <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-800">
+        <h3 class="text-lg font-bold text-amber-300">📖 考點圖鑑 & 錯題紀錄</h3>
+        <button id="codex-close" type="button" class="min-w-[36px] min-h-[36px] rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 cursor-pointer">✕</button>
+      </div>
+      <div class="flex gap-2 mb-3">
+        <button id="tab-vocab" type="button" class="flex-1 py-2 rounded-lg text-sm font-medium bg-amber-500/20 text-amber-200 border border-amber-500/40 cursor-pointer">核心單字庫</button>
+        <button id="tab-mistakes" type="button" class="flex-1 py-2 rounded-lg text-sm font-medium bg-slate-800 text-slate-300 border border-slate-700 cursor-pointer">我的錯題本</button>
+      </div>
+      <div id="codex-body" class="space-y-2.5 overflow-y-auto pr-1 text-sm"></div>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'taoyuan_high_trpg_save_v2';
+    const WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbyxzW0ISiimRgRD3qeSZHa8WF81PHkCVS93MsQaqec5737VMYoHNq3TGAC_f9QKGGIyWQ/exec';
+    const WEBHOOK_SECRET = 'taoyuan-trpg-2026';
+
+    const AudioEngine = {
+      ctx: null, muted: false,
+      init() {
+        if (!this.ctx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (AudioCtx) this.ctx = new AudioCtx();
+        }
+        if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume().catch(() => {});
+      },
+      playTone(freq, duration, type = 'sine', vol = 0.08, delay = 0) {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime + delay;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, now);
+        gain.gain.setValueAtTime(vol, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + duration);
+      },
+      click() { this.playTone(520, 0.06, 'triangle', 0.05); },
+      diceTick() { this.playTone(300 + Math.random() * 240, 0.04, 'square', 0.03); },
+      correct() { this.playTone(523.25, 0.12, 'triangle', 0.08, 0); this.playTone(659.25, 0.12, 'triangle', 0.08, 0.09); this.playTone(783.99, 0.22, 'triangle', 0.09, 0.18); },
+      wrong() { this.playTone(220, 0.16, 'sawtooth', 0.07, 0); this.playTone(165, 0.26, 'sawtooth', 0.07, 0.12); },
+      heal() { this.playTone(587.33, 0.12, 'sine', 0.08, 0); this.playTone(880, 0.25, 'sine', 0.09, 0.1); },
+      portal() { this.playTone(392, 0.15, 'sine', 0.07, 0); this.playTone(493.88, 0.15, 'sine', 0.07, 0.1); this.playTone(587.33, 0.15, 'sine', 0.07, 0.2); this.playTone(783.99, 0.35, 'sine', 0.09, 0.3); }
+    };
+
+    const CLASSES = {
+      scholar: { id: 'scholar', icon: '🧙', name: '字源學者', stats: { INT: 3, DEX: 1, CHA: 0 }, perk: '智力 +3｜每答對一題額外獲得 +10 XP，且開局多 1 張【📜 透視卷軸】。' },
+      ranger: { id: 'ranger', icon: '🏹', name: '語感遊俠', stats: { INT: 1, DEX: 3, CHA: 0 }, perk: '敏捷 +3｜被動技能：自動閃避冒險中「第 1 次」答錯的 HP 扣血傷害！' },
+      bard: { id: 'bard', icon: '🎭', name: '交涉詩人', stats: { INT: 0, DEX: 1, CHA: 3 }, perk: '魅力 +3｜NPC 交涉檢定大幅加值，且開局多 1 枚【🧭 50/50 羅盤】與【🧪 藥水】。' }
+    };
+
+    const VOCAB_DB = {
+      'inspect': { tag: '4500 單字 1-1~11-2', word: 'inspect (v.)', meaning: '視察、仔細檢查', morph: 'in- (向內) + spect (看) → 往裡面仔細看', chunk: 'inspect the building for safety' },
+      'chilling message': { tag: 'ALL+ 巴黎地下墓穴', word: 'chilling message', meaning: '令人毛骨悚然的訊息', morph: 'chill (寒冷) + -ing (令人…的)', chunk: 'carved with a chilling message' },
+      'not for the faint of heart': { tag: 'ALL+ 巴黎地下墓穴', word: 'not for the faint of heart', meaning: '不適合膽小者、需要強大心臟的', morph: 'faint (微弱的/膽怯的)', chunk: 'This adventure is not for the faint of heart.' },
+      'safely trapped': { tag: 'ALL+ 碳捕捉 CCS', word: 'safely trapped', meaning: '安全地被封存／困住', morph: 'trap (困住) + -ed (被動過去分詞作補語)', chunk: 'keep excess CO2 safely trapped underground' },
+      'exposed': { tag: '4500 單字 1-1~11-2', word: 'expose (v.)', meaning: '暴露、使接觸', morph: 'ex- (向外) + pose (放置) → 放在外面暴露', chunk: 'be exposed to deadly emissions' },
+      'emissions': { tag: 'ALL+ 碳捕捉 CCS', word: 'emission (n.)', meaning: '排放、排放物', morph: 'e- (向外) + miss (送出) + -ion (名詞)', chunk: 'reduce greenhouse gas emissions' },
+      'exhausted': { tag: '4500 單字 1-1~11-2', word: 'exhausted (adj.)', meaning: '筋疲力盡的', morph: 'ex- (向外) + haust (抽乾) + -ed', chunk: 'feel completely exhausted' },
+      'alternative': { tag: '4500 單字 1-1~11-2', word: 'alternative (n./adj.)', meaning: '替代方案；替代的', morph: 'alter (其他的/改變) + -nat + -ive', chunk: 'an alternative to fossil fuels' },
+      'elaborately decorated': { tag: 'ALL+ 紐約不夜城', word: 'elaborately decorated', meaning: '精心裝飾的', morph: 'e- (出) + labor (勞動) + -ate + -ly', chunk: 'elaborately decorated windows' },
+      'flowing robes': { tag: 'ALL+ 阿爾豐斯・慕夏', word: 'flowing robes', meaning: '飄逸的長袍', morph: 'flow (流動) + -ing', chunk: 'women in flowing robes' },
+      'signature style': { tag: 'ALL+ 阿爾豐斯・慕夏', word: 'signature style', meaning: '招牌風格、標誌性畫風', morph: 'sign (記號) + -ature', chunk: 'his signature style featuring natural curves' },
+      'leaves a lasting impression on': { tag: 'ALL+ 紐約／跨單元', word: 'leave a lasting impression on', meaning: '對…留下持久深刻的印象', morph: 'im- (進入) + press (壓) + -ion', chunk: 'leave a lasting impression / permanent mark' },
+      'stripped of': { tag: 'ALL+ 餐盤上的歷史', word: 'be stripped of', meaning: '被剝奪…（權力、地位）', morph: 'strip (剝去) + -ed', chunk: 'stripped of political power and social status' },
+      'rigid social order': { tag: 'ALL+ 餐盤／服裝規定', word: 'rigid social order', meaning: '嚴格僵化的社會階級', morph: 'rigid (僵硬的、嚴格的)', chunk: 'impose a rigid social order' },
+      'aristocracy': { tag: 'ALL+ 餐盤上的歷史', word: 'aristocracy (n.)', meaning: '貴族階級', morph: 'aristo- (最佳的) + -cracy (統治)', chunk: 'the ruling aristocracy vs. laboring peasantry' },
+      'remained distinct': { tag: 'ALL+ 餐盤／服裝規定', word: 'remain distinct', meaning: '保持截然不同／區分開來', morph: 'dis- (分開) + stinct (刺／區別)', chunk: 'remain distinct / set A apart from B' },
+      'permanent mark': { tag: 'ALL+ 餐盤上的歷史', word: 'permanent mark', meaning: '永久的印記', morph: 'per- (完全) + man (停留) + -ent', chunk: 'leave a permanent mark on history' },
+      'take them seriously': { tag: 'ALL+ 義大利食物文化', word: 'take ... seriously', meaning: '認真看待…', morph: 'serious (嚴肅認真的) + -ly', chunk: 'take traditional recipes seriously' },
+      'unidentified': { tag: 'ALL+ UFO 檔案', word: 'unidentified (adj.)', meaning: '未確認的、不明的', morph: 'un- (不) + ident (相同) + -ify + -ed', chunk: 'unidentified flying objects (UFOs)' },
+      'met with': { tag: 'ALL+ UFO 檔案', word: 'be met with', meaning: '遭遇…反應／獲得…迴響', morph: 'meet 的過去分詞被動語態', chunk: 'be met with mixed reactions' },
+      'account for': { tag: 'ALL+ UFO／跨單元', word: 'account for', meaning: '解釋…的原因；佔（比例）', morph: 'ac- (朝向) + count (計算)', chunk: 'account for the strange phenomenon' },
+      'scorching': { tag: 'ALL+ 植物的秘密', word: 'scorching (adj.)', meaning: '炙熱的、灼熱的', morph: 'scorch (燒焦) + -ing', chunk: 'avoid the scorching daytime heat' },
+      'unpredictable': { tag: 'ALL+ 科學夢境', word: 'unpredictable (adj.)', meaning: '無法預測的', morph: 'un- (不) + pre- (前) + dict (說) + -able', chunk: 'the unpredictable world of dreams' },
+      'wander': { tag: 'ALL+ 科學夢境', word: 'wander (v.)', meaning: '漫遊、走神', morph: '注意與 wonder (好奇) 區分', chunk: 'let one’s mind wander' },
+      'paid off': { tag: 'ALL+ 太空人 Kjell', word: 'pay off', meaning: '得到回報、奏效', morph: '片語動詞', chunk: 'Years of persistence finally paid off.' },
+      'substantial': { tag: '4500 單字 1-1~11-2', word: 'substantial (adj.)', meaning: '大量的、實質的', morph: 'sub- (在下面) + stant (站立) + -ial', chunk: 'provide substantial evidence' },
+      'inevitable': { tag: '4500 單字 1-1~11-2', word: 'inevitable (adj.)', meaning: '無法避免的、必然的', morph: 'in- (不) + evit (避開) + -able', chunk: 'an inevitable consequence' },
+      'make a note of': { tag: 'U7 行程規劃與預約', word: 'make a note of', meaning: '把…記下來、留意', morph: 'note (紀錄/筆記)', chunk: 'make a note of your seating preferences' },
+      'seating preferences': { tag: 'U7 行程規劃與預約', word: 'seating preferences', meaning: '座位偏好', morph: 'prefer (偏好) + -ence (名詞字尾)', chunk: 'arrange a table according to seating preferences' },
+      'set them apart from': { tag: 'U7-U8 服裝規定／紐約', word: 'set (sb/sth) apart from', meaning: '使…與眾不同／與…區分開來', morph: 'a- (朝向) + part (分開)', chunk: 'set their style apart from others' },
+      'left up to': { tag: 'U7-U8 阿嘉莎推理', word: 'be left up to', meaning: '交由…決定', morph: 'leave up to 的被動形式', chunk: 'The final verdict is left up to the audience.' },
+      'along the way': { tag: 'U8 澳洲環島 The Big Lap', word: 'along the way', meaning: '一路上、沿途中', morph: '片語副詞', chunk: 'pass snow-covered hills along the way' },
+      'worthwhile': { tag: 'U8 澳洲環島 The Big Lap', word: 'worthwhile (adj.)', meaning: '值得花時間／精力的', morph: 'worth (價值) + while (時間)', chunk: 'the payoff is certainly worthwhile' },
+      'trigger': { tag: 'U9 能量飲料／多巴胺', word: 'trigger (v.)', meaning: '引發、觸發', morph: '原指扣板機 → 觸發反應', chunk: 'trigger a sudden rush of energy' },
+      'interfere with': { tag: 'U9 能量飲料 & 4500單', word: 'interfere with', meaning: '干擾、妨礙', morph: 'inter- (在…之間) + fere (擊打/碰撞)', chunk: 'interfere with deep sleep and concentration' },
+      'decline': { tag: 'U9 能量飲料 & 4500單', word: 'decline (n./v.)', meaning: '下降、衰退；婉拒', morph: 'de- (向下) + cline (傾斜)', chunk: 'experience a sharp decline in mental focus' },
+      'distracted': { tag: 'U9-U10 包浩斯 & 4500單', word: 'distract (v.)', meaning: '使分心、轉移注意力', morph: 'dis- (分開) + tract (拉扯) → 把注意力拉走', chunk: 'operate devices without being distracted by ornaments' },
+      'independent of': { tag: 'U10 直接空氣捕捉 DAC', word: 'independent of', meaning: '獨立於…之外、不依賴…', morph: 'in- (不) + de- (下) + pend (懸掛) + -ent', chunk: 'capture CO2 completely independent of factory sources' },
+      'equivalent to': { tag: 'U10 直接空氣捕捉 DAC', word: 'equivalent to', meaning: '等同於、相當於', morph: 'equi- (相等) + val (價值) + -ent', chunk: 'equivalent to planting millions of real trees' },
+      'controversy': { tag: 'U10-U11 4500單核心', word: 'controversy (n.)', meaning: '爭議、爭論', morph: 'contra- (反對) + vers (轉) + -y', chunk: 'cause a lot of public controversy' },
+      'profound': { tag: 'U10-U11 維京語言影響', word: 'profound (adj.)', meaning: '深遠的、深刻的', morph: 'pro- (向前/深處) + found (底部)', chunk: 'have a profound impact on the English language' }
+    };
+
+    const ITEMS_INFO = {
+      hoodie: { icon: '🧥', name: '黯淡的灰色連帽衫', desc: '初始裝備。樸素低調，沒有任何抗魔加成。' },
+      dopamine: { icon: '🌈', name: '多巴胺霓虹披風', desc: '【Act I 獎勵】穿上明亮色彩能提升情緒與專注力，免疫 distract 分心狀態。' },
+      fork: { icon: '🍴', name: '征服者雙語銀叉', desc: '【左之門獎勵】刻有牛(cow)與牛肉(beef)雙重符文，記錄著 1066 年語言階級的歷史印記。' },
+      amulet: { icon: '🌵', name: '夜行氣孔護符', desc: '【中之門獎勵】能在炙熱環境中於夜晚開啟氣孔，抵禦極端高溫與未知謎團。' },
+      orbitalKey: { icon: '🛰️', name: '軌道碳封存密鑰', desc: '【右之門獎勵】能啟動地球深層碳捕捉系統，守住最後的生態防線。' },
+      pocketWatch: { icon: '🕵️', name: '阿嘉莎的蘇活區懷錶', desc: '【Act III 獎勵】記錄著午夜列車的座位偏好與推理線索，看穿一切同義替換陷阱。' },
+      detoxElixir: { icon: '⚡', name: '清醒脈衝解毒劑', desc: '【Act IV 獎勵】中和過量能量飲與咖啡因的副作用，徹底掌握分詞構句與同位語。' },
+      bauhausPrism: { icon: '🏛️', name: '包浩斯幾何聖杯', desc: '【Act V 終極獎勵】象徵「形隨機能 (Form Follows Function)」與直接空氣捕捉技術的最高結晶。' }
+    };
+
+    const ENCOUNTERS = {
+      act1: {
+        npc: '無面騎士（Faceless Knight）',
+        prompt: '面對擋在畫廊盡頭的無面騎士，你決定如何應對？',
+        actions: [
+          { key: 'persuade', stat: 'CHA', dc: 12, label: '🗣️ 話術交涉：讚美壁畫與慕夏風格，試圖套話', successMsg: '騎士被你的藝術眼光打動，悄悄送你 1 枚【🧭 50/50 羅盤】！', reward: { compass: 1, xp: 20 } },
+          { key: 'investigate', stat: 'INT', dc: 12, label: '🔍 觀察銘文：仔細檢查石門與霓虹披風上的語法線索', successMsg: '你發現披風旁藏著一張【📜 透視卷軸】，並獲得 +20 XP！', reward: { scroll: 1, xp: 20 } },
+          { key: 'confront', stat: 'DEX', dc: 13, label: '⚔️ 搶攻突襲：趁騎士尚未舉劍前迅速搶佔戰術高地', successMsg: '你身手矯健地避開了第一波威壓，獲得 +35 XP 與【🧪 解毒藥水】！', reward: { elixir: 1, xp: 35 } }
+        ]
+      },
+      act3: {
+        npc: '阿嘉莎・克莉絲蒂的幻影（Phantom of Agatha）',
+        prompt: '午夜列車在暴風雪中行駛，阿嘉莎正凝視著訂位表，你要採取什麼行動？',
+        actions: [
+          { key: 'persuade', stat: 'CHA', dc: 12, label: '🗣️ 禮貌搭話：詢問蘇活區見聞與她的座位偏好', successMsg: '阿嘉莎欣賞你的談吐，贈與你 1 枚【🧭 50/50 羅盤】與 +20 XP！', reward: { compass: 1, xp: 20 } },
+          { key: 'investigate', stat: 'INT', dc: 12, label: '🔍 檢查車票：比對列車長手上的座位清單與潛在線索', successMsg: '你從訂位備註中抽絲剝繭，獲得 1 張【📜 透視卷軸】！', reward: { scroll: 1, xp: 20 } },
+          { key: 'confront', stat: 'DEX', dc: 13, label: '🏃 疾行巡廂：在列車搖晃間衝往餐車調查異常聲響', successMsg: '你穩住重心並搶回一瓶【🧪 解毒藥水】與 +35 XP！', reward: { elixir: 1, xp: 35 } }
+        ]
+      },
+      act4: {
+        npc: '咖啡因狂暴守衛（Hyper-Pulse Guardian）',
+        prompt: '地下實驗室的守衛因為喝了過量能量飲而陷入亢奮，你打算怎麼做？',
+        actions: [
+          { key: 'persuade', stat: 'CHA', dc: 13, label: '🗣️ 安撫勸說：用冷靜語氣提醒他咖啡因過量的後果', successMsg: '守衛的呼吸稍微平緩，交出 1 瓶【🧪 解毒藥水】並給你 +25 XP！', reward: { elixir: 1, xp: 25 } },
+          { key: 'investigate', stat: 'INT', dc: 12, label: '🔍 檢視成分表：迅速掃描能量飲罐上的醫學警語', successMsg: '你看穿了包裝話術的破綻，獲得 1 張【📜 透視卷軸】！', reward: { scroll: 1, xp: 20 } },
+          { key: 'confront', stat: 'DEX', dc: 12, label: '🛡️ 閃避衝撞：靈巧翻過實驗桌，拉開距離準備反擊', successMsg: '完美閃避！你在桌角撿到 1 枚【🧭 50/50 羅盤】與 +30 XP！', reward: { compass: 1, xp: 30 } }
+        ]
+      },
+      act5: {
+        npc: '包浩斯極簡審判官（Bauhaus Arbiter）',
+        prompt: '面對高塔頂端的終極魔王「極簡審判官」，先發制人吧！',
+        actions: [
+          { key: 'persuade', stat: 'CHA', dc: 13, label: '🗣️ 哲學辯論：以「形隨機能」與永續未來與審判官對話', successMsg: '審判官微微點頭，賜予你 1 枚【🧭 50/50 羅盤】與 +30 XP！', reward: { compass: 1, xp: 30 } },
+          { key: 'investigate', stat: 'INT', dc: 12, label: '🔍 解讀盧恩古碑：對照維京古碑與 DAC 機械樹的數據', successMsg: '古碑閃耀微光，為你補充 1 張【📜 透視卷軸】與 +25 XP！', reward: { scroll: 1, xp: 25 } },
+          { key: 'confront', stat: 'DEX', dc: 13, label: '⚡ 破風突進：踩上幾何階梯搶先奪取祭壇能量', successMsg: '你精準落在祭壇邊緣，獲得【🧪 解毒藥水】與 +40 XP！', reward: { elixir: 1, xp: 40 } }
+        ]
+      }
+    };
+
+    const ACT1_QUESTIONS = [
+      { id: 'act1_q1', title: '檢定 1：點亮霓虹披風（分詞構句主被動）', stem: '______ during a dark age of despair, "Dopamine Dressing" is a powerful reminder...', hint: '提示：先看逗號後的主詞 "Dopamine Dressing"（詞彙），它與動詞 coin（創造）是主動還是被動關係？', options: [{ key: 'A', text: 'First coining' }, { key: 'B', text: 'First coined' }, { key: 'C', text: 'To first coin' }, { key: 'D', text: 'Having first coined' }], answer: 'B', rationale: '<strong>正解 (B) First coined。</strong><br>主要子句的主詞是詞彙 <em>"Dopamine Dressing"</em>，與動詞 <em>coin</em>（創造新詞）之間為「被動關係」（詞彙是被創造出來的），故省略連接詞與 be 動詞後，須保留過去分詞 <strong>coined</strong>。(A)(D) 皆為主動分詞，(C) 表目的，均與主詞被動關係衝突。' },
+      { id: 'act1_q2', title: '檢定 2：解鎖心智加成（同位語子句辨析）', stem: '...is a powerful reminder ______ what we wear shapes our mindset.', hint: '提示：檢查空格後方的句子 what we wear（主）+ shapes（動）+ our mindset（受）是否已經完整不缺成分？', options: [{ key: 'A', text: 'which' }, { key: 'B', text: 'what' }, { key: 'C', text: 'that' }, { key: 'D', text: 'where' }], answer: 'C', rationale: '<strong>正解 (C) that。</strong><br>空格後方是完整句：主詞 <em>what we wear</em> ＋ 及物動詞 <em>shapes</em> ＋ 受詞 <em>our mindset</em>，句構完全不缺主詞或受詞。用來補充說明前方抽象名詞 <em>reminder</em> 的內容時，須使用引導同位語名詞子句的連接詞 <strong>that</strong>。(A) <em>which</em> 與 (B) <em>what</em> 後方皆須缺主詞或受詞；(D) <em>where</em> 須接地方副詞概念，均不符。' },
+      { id: 'act1_q3', title: '檢定 3：看穿過去的失誤（KUSO 助動詞＋過去事實相反）', stem: 'They ______ the ancient contract more carefully before stepping into my trap yesterday!', hint: '提示：抓住句尾時間標記 yesterday，表達「當時本應該做（卻沒做）」。', options: [{ key: 'A', text: 'should read' }, { key: 'B', text: 'must read' }, { key: 'C', text: 'should have read' }, { key: 'D', text: 'must have read' }], answer: 'C', rationale: '<strong>正解 (C) should have read。</strong><br>句尾出現明確的過去時間標記 <em>yesterday</em>，且語意為責備／懊悔「當時本應該仔細閱讀合約（實際上卻沒讀）」，因此須使用 <strong>should have + p.p.</strong> 表與過去事實相反。(A)(B) 只能用於現在或未來；(D) <em>must have read</em> 則是「當時一定已經讀了」的肯定推測，語意與落入陷阱矛盾。' },
+      { id: 'act1_q4', title: '檢定 4：破除最後屏障（KUSO 助動詞慣用語塊）', stem: 'Since the iron gate behind you is locked, you ______ answer my riddles to survive!', hint: '提示：後方接原形動詞 answer，且語意為「既然沒別的選擇，倒不如…」。', options: [{ key: 'A', text: 'may as well' }, { key: 'B', text: 'are used to' }, { key: 'C', text: 'would rather to' }, { key: 'D', text: 'cannot help' }], answer: 'A', rationale: '<strong>正解 (A) may as well。</strong><br>後方接原形動詞 <em>answer</em>，且語意為「既然退路已斷，倒不如／不妨直接回答謎題」，完全符合 <strong>may as well + 原形動詞</strong> 的用法。(B) <em>be used to</em> 後方須接 V-ing/名詞；(C) <em>would rather</em> 後方不可加 to；(D) <em>cannot help</em> 後方須接 V-ing（或加 but + 原形動詞）。' }
+    ];
+
+    const PORTALS = {
+      left: {
+        id: 'left', name: '左之門：諾曼貴族的暗黑晚宴廳', subtitle: 'The Aristocrat’s Banquet', badgeColor: 'text-amber-300 border-amber-500/40 bg-amber-500/10', rewardId: 'fork',
+        introCn: '你推開左側鑲金的橡木門，踏入一座長達百公尺的哥德式宴會廳。高台上的諾曼貴族用優雅法語舉杯，底層的盎格魯-薩克遜農民只能啃著乾麵包。主廚幽靈端著義大利麵飄過來……',
+        storyEn: `When William the Conqueror invaded England in 1066, he imposed a <span class="vocab-chip" data-vocab="rigid social order">rigid social order</span>. The native Anglo-Saxons were <span class="vocab-chip" data-vocab="stripped of">stripped of</span> power, while the ruling <span class="vocab-chip" data-vocab="aristocracy">aristocracy</span> spoke French. For centuries, the two classes <span class="vocab-chip" data-vocab="remained distinct">remained distinct</span>, leaving a <span class="vocab-chip" data-vocab="permanent mark">permanent mark</span> on English—which is why "cow" and "beef" are different words.<br><br>Suddenly, an Italian ghost chef slams a pot on the table: "How dare someone put heavy cream into Carbonara?! Italians <span class="vocab-chip" data-vocab="take them seriously">take traditional recipes seriously</span>! When I was alive, I __[1]__ cook in a tiny kitchen in Rome, and now I __[2]__ serving picky ghosts every night. Looking at this ruined dish, I __[3]__ scream!"`,
+        questions: [
+          { id: 'left_q1', title: '宴會檢定 1：過去習慣 vs. 現在習慣（一）', stem: 'When I was alive, I ______ cook in a tiny kitchen in Rome...', hint: '提示：看到過去時間 When I was alive 且後面是原形動詞 cook。', options: [{ key: 'A', text: 'used to' }, { key: 'B', text: 'am used to' }, { key: 'C', text: 'was used to' }, { key: 'D', text: 'use to' }], answer: 'A', rationale: '<strong>正解 (A) used to。</strong><br>前方有明確過去時間副詞子句 <em>When I was alive</em>，且後方為原形動詞 <em>cook</em>，表達「過去曾經／習慣做某事（現在已不如此）」須用 <strong>used to + 原形動詞</strong>。(B)(C) <em>be used to</em> 後方須接 V-ing 才表習慣。' },
+          { id: 'left_q2', title: '宴會檢定 2：過去習慣 vs. 現在習慣（二）', stem: '...and now I ______ serving picky ghosts every night.', hint: '提示：注意 now 與空格後面的動名詞 serving！', options: [{ key: 'A', text: 'used to' }, { key: 'B', text: 'am used to' }, { key: 'C', text: 'would rather' }, { key: 'D', text: 'may as well' }], answer: 'B', rationale: '<strong>正解 (B) am used to。</strong><br>關鍵線索有兩個：時間副詞 <em>now</em>（現在狀態），以及空格後方的動名詞 <strong>serving</strong>。表達「現在已經習慣於某事」須用 <strong>be used to + V-ing</strong>。(A)(C)(D) 後方皆須接原形動詞。' },
+          { id: 'left_q3', title: '宴會檢定 3：情緒失控的義大利主廚', stem: 'Looking at this ruined dish, I ______ scream!', hint: '提示：後面是原形動詞 scream，表示「忍不住大叫」。', options: [{ key: 'A', text: 'cannot help' }, { key: 'B', text: 'cannot help but' }, { key: 'C', text: 'am used to' }, { key: 'D', text: 'should have' }], answer: 'B', rationale: '<strong>正解 (B) cannot help but。</strong><br>空格後方為原形動詞 <em>scream</em>，表達「忍不住做某事」時，若接原形動詞須使用 <strong>cannot help but + 原形動詞</strong>。(A) <em>cannot help</em> 後方須接 V-ing (<em>screaming</em>)；(C) 後接 V-ing；(D) 後接 p.p.。' }
+        ],
+        ending: { title: '結局 A：歷史與味蕾的雙語破譯者', summary: '你成功安撫了義大利主廚，並從諾曼貴族的長桌上取走【征服者雙語銀叉】。' }
+      },
+      center: {
+        id: 'center', name: '中之門：五角大廈的沙漠植物溫室', subtitle: 'The Scorching Vault', badgeColor: 'text-sky-300 border-sky-500/40 bg-sky-500/10', rewardId: 'amulet',
+        introCn: '穿越中間的藍色傳送門，一股炙熱的熱浪撲面而來。沙地上矗立著巨大的仙人掌，而玻璃櫃裡鎖著五角大廈解密的飛碟檔案與化學家門德烈夫的夢境筆記。',
+        storyEn: `A glowing terminal displays Pentagon files about <span class="vocab-chip" data-vocab="unidentified">unidentified</span> flying objects. This release was <span class="vocab-chip" data-vocab="met with">met with</span> mixed reactions because experts still cannot <span class="vocab-chip" data-vocab="account for">account for</span> all the sightings.<br><br>Beside the terminal stands a giant cactus. __[1]__ most plants that open their stomata during the day, cacti open theirs at night to avoid the <span class="vocab-chip" data-vocab="scorching">scorching</span> daytime heat. The hotter the desert gets, __[2]__ it becomes for ordinary plants to survive.<br><br>On the desk lies an open notebook about scientific breakthroughs made in dreams. By letting his mind <span class="vocab-chip" data-vocab="wander">wander</span> in the <span class="vocab-chip" data-vocab="unpredictable">unpredictable</span> world of sleep, Mendeleev envisioned the periodic table. Looking at the messy ink on the page, you realize he __[3]__ woken up in the middle of the night to write it down immediately.`,
+        questions: [
+          { id: 'center_q1', title: '溫室檢定 1：仙人掌的對比句型', stem: '______ most plants that open their stomata during the day, cacti open theirs at night...', hint: '提示：後面是名詞片語 most plants...，需要能直接加名詞表示「與…不同」的介系詞。', options: [{ key: 'A', text: 'Dislike' }, { key: 'B', text: 'Unlike' }, { key: 'C', text: 'As' }, { key: 'D', text: 'Regardless' }], answer: 'B', rationale: '<strong>正解 (B) Unlike。</strong><br>空格後方為名詞片語 <em>most plants...</em>，且句意對比「大多數植物在白天開氣孔」與「仙人掌在夜晚開氣孔」，須用介系詞 <strong>Unlike（與……不同）</strong>。(A) <em>Dislike</em> 是動詞（不喜歡），不能放句首直接接名詞作狀語；(C) 語意相反；(D) 須搭配 of 才成介系詞片語 <em>regardless of</em>。' },
+          { id: 'center_q2', title: '溫室檢定 2：雙重比較級（越…就越…）', stem: 'The hotter the desert gets, ______ it becomes for ordinary plants to survive.', hint: '提示：The + 比較級..., the + 比較級... 對稱結構，hard 為單音節形容詞。', options: [{ key: 'A', text: 'harder' }, { key: 'B', text: 'the hardest' }, { key: 'C', text: 'the harder' }, { key: 'D', text: 'the more hard' }], answer: 'C', rationale: '<strong>正解 (C) the harder。</strong><br>本題測驗「The + 比較級..., the + 比較級...」（越……就越……）的固定對稱結構。<em>hard</em> 為單音節形容詞，比較級為 <em>harder</em>，且不可遺漏定冠詞 <strong>the</strong>。(A) 漏了 the；(B) 誤用最高級；(D) 單音節詞不加 more。' },
+          { id: 'center_q3', title: '溫室檢定 3：對過去的肯定推測', stem: 'Looking at the messy ink on the page, you realize he ______ woken up in the middle of the night...', hint: '提示：看到凌亂的墨跡，推測他「當時一定有」半夜醒來記下靈感。', options: [{ key: 'A', text: 'must have' }, { key: 'B', text: 'should have' }, { key: 'C', text: 'cannot have' }, { key: 'D', text: 'may not have' }], answer: 'A', rationale: '<strong>正解 (A) must have。</strong><br>從「書頁上凌亂的墨跡（messy ink）」作為線索，對過去發生的事情做出「當時一定醒來趕快記下來」的強烈肯定推測，須用 <strong>must have + p.p.</strong>。(B) 表「當時應該做卻沒做」，與事實已記下來矛盾；(C) 表「當時不可能」，語意相反。' }
+        ],
+        ending: { title: '結局 B：沙漠檔案的真理探尋者', summary: '你破解了五角大廈機密與仙人掌的生存密碼，取得【夜行氣孔護符】。' }
+      },
+      right: {
+        id: 'right', name: '右之門：失控的太空軌道控制室', subtitle: 'Orbit & Carbon Crisis', badgeColor: 'text-violet-300 border-violet-500/40 bg-violet-500/10', rewardId: 'orbitalKey',
+        introCn: '你穿過紫色的時空門，身處模擬國際太空站的控制室。螢幕正閃爍著紅色的二氧化碳濃度警報！答對軌道檢定並組裝出緊急通訊句，就能啟動碳封存系統！',
+        storyEn: `From the window of the space station, astronaut Kjell Lindgren looked down at Earth. His long struggle with asthma and years of hard work had finally <span class="vocab-chip" data-vocab="paid off">paid off</span>, yet he still longed to give back to society.<br><br>On the main monitor, <span class="vocab-chip" data-vocab="substantial">substantial</span> evidence shows that rising carbon <span class="vocab-chip" data-vocab="emissions">emissions</span> are an <span class="vocab-chip" data-vocab="inevitable">inevitable</span> threat. If we fail to develop an <span class="vocab-chip" data-vocab="alternative">alternative</span> to fossil fuels, humanity __[1]__ suffer devastating consequences. Fortunately, carbon capture and storage (CCS) aims to keep excess CO2 safely __[2]__ deep underground, buying us precious time in the battle against climate change.`,
+        questions: [
+          { id: 'right_q1', title: '軌道檢定 1：助動詞與必然結果', stem: 'If we fail to develop an alternative to fossil fuels, humanity ______ suffer devastating consequences.', hint: '提示：表達「勢必會、註定會」承受後果，且後方接原形動詞 suffer。', options: [{ key: 'A', text: 'is bound to' }, { key: 'B', text: 'is used to' }, { key: 'C', text: 'would rather' }, { key: 'D', text: 'cannot help' }], answer: 'A', rationale: '<strong>正解 (A) is bound to。</strong><br>後方接原形動詞 <em>suffer</em>，且搭配條件句語意「若不開發替代能源，人類『勢必／註定會』承受毀滅性後果」，<strong>be bound to + 原形動詞</strong> 正是「必定會、註定會」的高頻語塊。(B)(D) 後方須接 V-ing；(C) <em>would rather</em> 意為「寧願」，不合邏輯。' },
+          { id: 'right_q2', title: '軌道檢定 2：受詞補語的被動分詞', stem: 'Carbon capture and storage (CCS) aims to keep excess CO2 safely ______ deep underground.', hint: '提示：CO2 與動詞 trap（封存／困住）之間是被動關係。', options: [{ key: 'A', text: 'trapping' }, { key: 'B', text: 'trapped' }, { key: 'C', text: 'to trap' }, { key: 'D', text: 'trap' }], answer: 'B', rationale: '<strong>正解 (B) trapped。</strong><br>受詞 <em>excess CO2</em>（過量的二氧化碳）與動詞 <em>trap</em>（困住／封存）之間為被動關係（CO2 是「被」封存在地底），因此受詞補語須用過去分詞 <strong>trapped</strong>（keep + O + p.p.）。' }
+        ],
+        chunkChallenge: {
+          title: '軌道終極任務：發送緊急英文戰報（語塊重組）',
+          promptCn: '請依序點選下方英文語塊，拼出正確的「過去事實相反＋對策」緊急廣播（中譯：面對這個棘手的問題，政府幾十年前就應該採取更嚴格的法律，但現在我們不妨立刻擁抱新科技。）：',
+          chunks: ['When facing this stubborn problem,', 'governments should have adopted stricter laws', 'decades ago,', 'but we may as well', 'embrace new technologies today.']
+        },
+        ending: { title: '結局 C：軌道危機的地球守護者', summary: '你不僅答對了軌道語法檢定，更成功拼出完整的緊急英文戰報，取得【軌道碳封存密鑰】！' }
+      }
+    };
+
+    const ACT3_QUESTIONS = [
+      { id: 'act3_q1', title: '列車檢定 1：蘇活區與服裝規定（區分與獨特）', stem: 'In ancient times, nobles wore rare garments to ______ themselves ______ the commoners; similarly, SoHo’s vibrant artistic atmosphere makes it truly unique.', hint: '提示：表達「使…與…區分開來／與眾不同」的雙重介系詞動詞片語。', options: [{ key: 'A', text: 'set ... apart from' }, { key: 'B', text: 'leave ... up to' }, { key: 'C', text: 'strip ... of' }, { key: 'D', text: 'account ... for' }], answer: 'A', rationale: '<strong>正解 (A) set ... apart from。</strong><br>句意為「古代貴族穿著稀有服飾，使自己與平民『區分開來／與眾不同』」，對應服裝規定與紐約蘇活區單元的核心語塊 <strong>set A apart from B</strong>（等同於 keep A distinct from B）。' },
+      { id: 'act3_q2', title: '列車檢定 2：阿嘉莎推理劇的懸念（交由…決定）', stem: 'Instead of revealing the culprit right away, the mystery playwright decided that the final verdict should be ______ the passengers on the train.', hint: '提示：阿嘉莎單元核心片語，表示「交由某人決定」。', options: [{ key: 'A', text: 'met with' }, { key: 'B', text: 'left up to' }, { key: 'C', text: 'taken seriously' }, { key: 'D', text: 'associated with' }], answer: 'B', rationale: '<strong>正解 (B) left up to。</strong><br>對應阿嘉莎・克莉絲蒂單元核心片語 <strong>be left up to + 對象</strong>（交由某人決定）。推理劇作家沒有直接公布兇手，而是把最終裁決權「交由列車上的乘客決定」。' },
+      { id: 'act3_q3', title: '列車檢定 3：澳洲環島長征（複合形容詞與回報）', stem: 'Driving around Australia’s "Big Lap" and passing ______ hills along the way may seem like a lot of effort, but the payoff is certainly worthwhile.', hint: '提示：山丘是「被白雪覆蓋的」，複合形容詞中名詞用單數，動詞採被動過去分詞。', options: [{ key: 'A', text: 'snow-covering' }, { key: 'B', text: 'snow-covered' }, { key: 'C', text: 'covering-snow' }, { key: 'D', text: 'snows-covered' }], answer: 'B', rationale: '<strong>正解 (B) snow-covered。</strong><br>山丘（hills）是「被白雪覆蓋的」，名詞 <em>snow</em> 加上過去分詞 <em>covered</em> 構成複合形容詞 <strong>snow-covered</strong>（白雪覆蓋的），且複合形容詞中的名詞一律用單數。' },
+      { id: 'act3_q4', title: '列車檢定 4：列車長規章（萬一…假設語氣）', stem: 'The conductor announced that if any passenger ______ lose their reservation ticket tonight, they will have to solve an extra riddle.', hint: '提示：主要子句為未來式 will have to，if 條件子句表達「萬一…」。', options: [{ key: 'A', text: 'should' }, { key: 'B', text: 'would' }, { key: 'C', text: 'might' }, { key: 'D', text: 'could' }], answer: 'A', rationale: '<strong>正解 (A) should。</strong><br>在 <em>if</em> 條件子句中，若主要子句為未來式（<em>will have to...</em>），條件子句搭配助動詞 <strong>should + 原形動詞</strong> 表示「萬一……（發生機率雖小但仍有可能）」。<em>would / might / could</em> 不用於此種未來「萬一」條件子句。' }
+    ];
+
+    const ACT4_QUESTIONS = [
+      { id: 'act4_q1', title: '實驗室檢定 1：能量飲料的真相（句首被動分詞構句）', stem: '______ as an "instant energy booster," the neon energy drink actually contains excessive caffeine and sugar.', hint: '提示：主要子句主詞是「能量飲料」，它與動詞 advertise（宣傳）是主動還是被動？', options: [{ key: 'A', text: 'Advertising' }, { key: 'B', text: 'Advertised' }, { key: 'C', text: 'To advertise' }, { key: 'D', text: 'Having advertised' }], answer: 'B', rationale: '<strong>正解 (B) Advertised。</strong><br>主要子句主詞是 <em>the neon energy drink</em>（能量飲料），飲料是「被宣傳為（be advertised as...）」瞬間能量補充劑。省略連接詞與 be 動詞後，句首須保留過去分詞 <strong>Advertised</strong>（同課本 <em>Nicknamed the "happiness hormone"...</em> 結構）。' },
+      { id: 'act4_q2', title: '實驗室檢定 2：生理反噬效應（句尾主動分詞構句表結果）', stem: 'Consuming too many energy drinks at night prevents your brain from resting, ______ a dangerous decline in concentration the next day.', hint: '提示：前面是完整句且無連接詞，表示「主動導致」後方的結果。', options: [{ key: 'A', text: 'lead to' }, { key: 'B', text: 'led to' }, { key: 'C', text: 'leading to' }, { key: 'D', text: 'to lead to' }], answer: 'C', rationale: '<strong>正解 (C) leading to。</strong><br>逗號前方已是完整主要子句，無連接詞連接時，後方動詞須改為分詞構句。前句事件「主動導致（lead to）」隔天專注力下降的結果，故用現在分詞 <strong>leading to</strong>（相當於 <em>, which leads to...</em>）。' },
+      { id: 'act4_q3', title: '實驗室檢定 3：Unit 9 核心字彙與介系詞搭配', stem: 'The health report warned that excessive caffeine will severely ______ teenagers’ sleeping habits and heart rhythms.', hint: '提示：inter-（在…之間）+ fere（擊打）→ 干擾、妨礙睡眠。', options: [{ key: 'A', text: 'interfere with' }, { key: 'B', text: 'account for' }, { key: 'C', text: 'pay off' }, { key: 'D', text: 'make a note of' }], answer: 'A', rationale: '<strong>正解 (A) interfere with。</strong><br>句意為「過量咖啡因會嚴重『干擾／妨礙』青少年的睡眠習慣與心律」，<strong>interfere with</strong> 為本次段考極高頻動詞片語。' },
+      { id: 'act4_q4', title: '實驗室檢定 4：U9 學習單核心（同位語 that vs. 關係子句 which）', stem: 'Medical researchers have provided substantial evidence for the fact ______ energy drinks cannot replace genuine rest.', hint: '提示：後方 energy drinks cannot replace genuine rest 是完整不缺受詞的句子，用來說明 the fact 的內容。', options: [{ key: 'A', text: 'which' }, { key: 'B', text: 'what' }, { key: 'C', text: 'that' }, { key: 'D', text: 'where' }], answer: 'C', rationale: '<strong>正解 (C) that。</strong><br>後方 <em>energy drinks cannot replace genuine rest</em> 主詞、動詞、受詞齊全，是完整子句，用來解釋前方抽象名詞 <em>the fact</em> 的具體內容，屬於<strong>同位語名詞子句</strong>，必須用 <strong>that</strong>，不可選 <em>which</em>！' }
+    ];
+
+    const ACT5_QUESTIONS = [
+      { id: 'act5_q1', title: '終章檢定 1：包浩斯 vs. 慕夏的設計哲學', stem: 'Unlike Mucha’s highly decorative posters, Bauhaus designers believed that "form follows function" and argued that unnecessary ornaments should be ______ so users are not ______.', hint: '提示：不必要的裝飾應該被「剝除」，使用者才不會被「分心」。', options: [{ key: 'A', text: 'stripped away; distracted' }, { key: 'B', text: 'left up; exhausted' }, { key: 'C', text: 'met with; exposed' }, { key: 'D', text: 'paid off; identified' }], answer: 'A', rationale: '<strong>正解 (A) stripped away; distracted。</strong><br>包浩斯主張「形隨機能」，認為應該將不必要的裝飾「剝除（stripped away）」，讓使用者在操作現代介面時不會被過度裝飾「分心（distracted）」。' },
+      { id: 'act5_q2', title: '終章檢定 2：直接空氣捕捉技術（DAC 文意選填核心）', stem: 'Traditional CCS is usually attached to factories; however, Direct Air Capture (DAC) machines can capture CO2 directly from the atmosphere, completely ______ specific industrial sources.', hint: '提示：in-（不）+ de-（下）+ pend（懸掛）→ 完全「獨立於」特定工業來源之外。', options: [{ key: 'A', text: 'independent of' }, { key: 'B', text: 'associated with' }, { key: 'C', text: 'exposed to' }, { key: 'D', text: 'reduced to' }], answer: 'A', rationale: '<strong>正解 (A) independent of。</strong><br>對比前句傳統碳捕捉必須「附著於（attached to）」工廠，新型 DAC 能直接從空氣捕捉二氧化碳，完全「獨立於（independent of）特定工業來源之外」。' },
+      { id: 'act5_q3', title: '終章檢定 3：機械樹的規模換算（DAC 搭配詞）', stem: 'Although DAC efficiency is currently low, building thousands of these mechanical facilities would be ______ planting millions of real trees to combat climate change.', hint: '提示：equi-（相等）+ val（價值）→ 等同於、相當於種植百萬棵樹。', options: [{ key: 'A', text: 'reluctant to' }, { key: 'B', text: 'equivalent to' }, { key: 'C', text: 'used to' }, { key: 'D', text: 'superior than' }], answer: 'B', rationale: '<strong>正解 (B) equivalent to。</strong><br><strong>be equivalent to + N / V-ing</strong> 意為「等同於、相當於……」，句意指建造數千座 DAC 設施的效果「相當於種植數百萬棵真樹」。' },
+      { id: 'act5_q4', title: '終章檢定 4：維京語言印記與高頻字彙辨析', stem: 'While the new policy caused a lot of public ______, historians agree that the Viking invasion had a ______ impact on everyday English pronouns like "they" and "their."', hint: '提示：contra-（反對）+ vers（轉）→ 爭議；pro-（深）+ found（底）→ 深遠的影響。', options: [{ key: 'A', text: 'controversy; profound' }, { key: 'B', text: 'destination; rigid' }, { key: 'C', text: 'exception; decorative' }, { key: 'D', text: 'restriction; fluent' }], answer: 'A', rationale: '<strong>正解 (A) controversy; profound。</strong><br>第一空 <em>cause a lot of controversy</em> 為「引起極大爭議」；第二空 <em>have a profound impact on...</em> 為「對……產生深遠的影響」（可與 <em>far-reaching</em> 替換）。' }
+    ];
+
+    const ACT5_CHUNK_CHALLENGE = {
+      title: '終極魔王封印陣：包浩斯與多巴胺跨課文總結句組裝',
+      promptCn: '請依序點選下方 5 個英文語塊，完成段考滿分壓軸句（中譯：這個在疫情期間首次被創造出來的詞彙，提醒了我們日常所穿與所見的色彩會深刻地塑造我們的心態。）：',
+      chunks: ['First coined during the pandemic,', 'this trend serves as a powerful reminder', 'that the visual cues', 'we encounter or wear daily', 'profoundly shape our mindset.']
+    };
+
+    const DEFAULT_STATE = {
+      studentName: '',
+      reportSubmitted: false,
+      screen: 'title', playerClass: 'scholar', rangerDodgeUsed: false,
+      hp: 100, maxHp: 100, san: 90, maxSan: 100, xp: 0,
+      inventory: ['hoodie'], consumables: { elixir: 1, compass: 1, scroll: 2 },
+      eliminatedOpts: {}, revealedHints: {}, encounterLog: {},
+      act1Answers: {}, activePortal: null, portalAnswers: {}, clearedPortals: [],
+      act3Answers: {}, act4Answers: {}, act5Answers: {},
+      chunkOrder: [], chunkSolved: false, act5ChunkOrder: [], act5ChunkSolved: false,
+      mistakes: [], codexTab: 'vocab'
+    };
+
+    let State = JSON.parse(JSON.stringify(DEFAULT_STATE));
+
+    function saveProgress() {
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(State)); } catch (e) {}
+    }
+
+    function loadProgress() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          State = Object.assign(JSON.parse(JSON.stringify(DEFAULT_STATE)), parsed);
+        }
+      } catch (e) {}
+    }
+
+    const $main = document.getElementById('app-main');
+
+    function showToast(msg) {
+      const box = document.getElementById('toast-box');
+      document.getElementById('toast-inner').textContent = msg;
+      box.classList.remove('opacity-0'); box.classList.add('opacity-100');
+      clearTimeout(window.__toastTimer);
+      window.__toastTimer = setTimeout(() => { box.classList.remove('opacity-100'); box.classList.add('opacity-0'); }, 2800);
+    }
+
+    function updateHUD() {
+      document.getElementById('hud-hp-text').textContent = `${State.hp} / ${State.maxHp}`;
+      document.getElementById('hud-hp-bar').style.width = `${Math.max(0, (State.hp / State.maxHp) * 100)}%`;
+      document.getElementById('hud-san-text').textContent = `${State.san} / ${State.maxSan}`;
+      document.getElementById('hud-san-bar').style.width = `${Math.max(0, (State.san / State.maxSan) * 100)}%`;
+      document.getElementById('hud-xp-text').textContent = `${State.xp} XP`;
+      document.getElementById('hud-xp-bar').style.width = `${Math.min(100, (State.xp / 650) * 100)}%`;
+      document.getElementById('hud-inv-count').textContent = State.inventory.length;
+      document.getElementById('cnt-elixir').textContent = State.consumables.elixir;
+      document.getElementById('cnt-compass').textContent = State.consumables.compass;
+      document.getElementById('cnt-scroll').textContent = State.consumables.scroll;
+      const clsObj = State.playerClass ? CLASSES[State.playerClass] : null;
+      document.getElementById('hud-class').textContent = clsObj ? `${clsObj.icon} ${clsObj.name}` : '未選職業';
+      const badge = document.getElementById('hud-mistake-badge');
+      if (State.mistakes.length > 0) { badge.textContent = State.mistakes.length; badge.classList.remove('hidden'); } else { badge.classList.add('hidden'); }
+      const stageNames = { title: '序章・選擇職業', act1: 'Act I｜地下畫廊', hub: 'Act II｜三扇傳送門', portal: State.activePortal ? `Act II｜${PORTALS[State.activePortal].subtitle}` : 'Act II', act3: 'Act III｜午夜列車 (U7-8)', act4: 'Act IV｜能量飲實驗室 (U9)', act5: 'Act V｜包浩斯終章 (U10-11)', ending: '冒險結算' };
+      document.getElementById('hud-stage').textContent = stageNames[State.screen] || '冒險中';
+      document.querySelectorAll('.nav-jump-btn').forEach(btn => {
+        const isCurrent = btn.dataset.navScreen === State.screen || (State.screen === 'portal' && btn.dataset.navScreen === 'hub');
+        btn.classList.toggle('ring-1', isCurrent); btn.classList.toggle('ring-sky-400', isCurrent); btn.classList.toggle('bg-slate-800', isCurrent);
+      });
+    }
+
+    function addItem(itemId) {
+      if (!State.inventory.includes(itemId)) { State.inventory.push(itemId); showToast(`🎁 獲得新裝備：${ITEMS_INFO[itemId].name}`); }
+      saveProgress(); updateHUD();
+    }
+
+    function useElixir() {
+      if (State.consumables.elixir <= 0) { showToast('🧪 你的【清醒脈衝解毒藥水】已經用完了！'); return; }
+      if (State.hp >= State.maxHp && State.san >= State.maxSan) { showToast('你的 HP 與理智值目前都是滿的，暫時不需要喝藥水。'); return; }
+      AudioEngine.heal(); State.consumables.elixir -= 1;
+      State.hp = Math.min(State.maxHp, State.hp + 25); State.san = Math.min(State.maxSan, State.san + 20);
+      showToast('🧪 飲用解毒藥水！HP +25，理智值 +20'); saveProgress(); updateHUD();
+    }
+
+    function rollD20Encounter(stageKey, actionObj) {
+      if (State.encounterLog[stageKey]) return;
+      const modal = document.getElementById('dice-modal');
+      const dieVisual = document.getElementById('dice-visual');
+      const dieNum = document.getElementById('dice-number');
+      const formula = document.getElementById('dice-formula');
+      const verdict = document.getElementById('dice-verdict');
+      const outcome = document.getElementById('dice-outcome');
+      const closeBtn = document.getElementById('dice-close');
+      const clsObj = State.playerClass ? CLASSES[State.playerClass] : CLASSES.scholar;
+      const bonus = clsObj.stats[actionObj.stat] || 0;
+      const rawRoll = Math.floor(Math.random() * 20) + 1;
+      const total = rawRoll + bonus;
+
+      document.getElementById('dice-context-label').textContent = `${ENCOUNTERS[stageKey].npc}｜${actionObj.stat} 檢定 (DC ${actionObj.dc})`;
+      verdict.textContent = '擲骰檢定中...'; verdict.className = 'text-xl font-bold text-amber-300';
+      outcome.textContent = ''; formula.textContent = `目標值 DC ${actionObj.dc}（職業 ${actionObj.stat} 加值 +${bonus}）`;
+      closeBtn.classList.add('hidden'); dieVisual.classList.add('animate-dice');
+      modal.classList.remove('hidden'); modal.classList.add('flex');
+
+      let ticks = 0;
+      const timer = setInterval(() => {
+        ticks += 1; dieNum.textContent = Math.floor(Math.random() * 20) + 1; AudioEngine.diceTick();
+        if (ticks >= 12) {
+          clearInterval(timer); dieVisual.classList.remove('animate-dice'); dieNum.textContent = rawRoll;
+          formula.textContent = `d20 骰出 [${rawRoll}] + ${actionObj.stat} 加值 [${bonus}] = 總計 ${total}（目標 DC ${actionObj.dc}）`;
+          let vText = '', oText = '';
+          if (rawRoll >= 18) {
+            AudioEngine.correct(); vText = '🌟 大成功 (Critical Success)！'; verdict.className = 'text-xl font-bold text-emerald-300';
+            State.xp += (actionObj.reward.xp || 20) + 25; State.hp = Math.min(State.maxHp, State.hp + 10);
+            if (actionObj.reward.compass) State.consumables.compass += actionObj.reward.compass;
+            if (actionObj.reward.scroll) State.consumables.scroll += actionObj.reward.scroll;
+            if (actionObj.reward.elixir) State.consumables.elixir += actionObj.reward.elixir;
+            oText = `${actionObj.successMsg} 因為擲出大成功，額外回復 10 HP 並再加 +25 XP！`;
+          } else if (rawRoll <= 3) {
+            AudioEngine.wrong(); vText = '💀 大失敗 (Critical Fail)！'; verdict.className = 'text-xl font-bold text-rose-400';
+            State.hp = Math.max(10, State.hp - 10); State.san = Math.max(10, State.san - 5);
+            oText = '糟糕！你不小心踩到阿嘉莎留下的香蕉皮，一頭栽進滿是單字卡的泥坑！HP -10、理智 -5，但你還是得面對接下來的試煉！';
+          } else if (total >= actionObj.dc) {
+            AudioEngine.correct(); vText = '✔ 檢定成功 (Success)！'; verdict.className = 'text-xl font-bold text-sky-300';
+            State.xp += (actionObj.reward.xp || 20);
+            if (actionObj.reward.compass) State.consumables.compass += actionObj.reward.compass;
+            if (actionObj.reward.scroll) State.consumables.scroll += actionObj.reward.scroll;
+            if (actionObj.reward.elixir) State.consumables.elixir += actionObj.reward.elixir;
+            oText = actionObj.successMsg;
+          } else {
+            AudioEngine.wrong(); vText = '✖ 檢定未過 (Fail)'; verdict.className = 'text-xl font-bold text-amber-400';
+            State.san = Math.max(10, State.san - 5);
+            oText = '對方完全不吃這一套，還對你投以疑惑的目光（理智值 -5）。只好靠真實的英文實力正面迎戰了！';
+          }
+          State.encounterLog[stageKey] = { actionLabel: actionObj.label, roll: rawRoll, bonus, total, verdict: vText, outcome: oText };
+          verdict.textContent = vText; outcome.textContent = oText; closeBtn.classList.remove('hidden'); saveProgress(); updateHUD();
+        }
+      }, 65);
+    }
+
+    function renderEncounterBox(stageKey) {
+      const enc = ENCOUNTERS[stageKey]; if (!enc) return '';
+      const done = State.encounterLog[stageKey];
+      if (done) {
+        return `<div class="rpg-card rounded-2xl p-4 border-indigo-500/40 space-y-1.5 animate-fade-in"><div class="flex items-center justify-between text-xs"><span class="font-bold text-indigo-300">🎲 TRPG 行動紀錄：${enc.npc}</span><span class="font-mono text-amber-300">${done.verdict} (總計 ${done.total})</span></div><p class="text-xs sm:text-sm text-slate-300">${done.outcome}</p></div>`;
+      }
+      return `<div class="rpg-card rounded-2xl p-5 border-indigo-500/40 space-y-3 animate-fade-in"><div class="flex items-center justify-between flex-wrap gap-2"><span class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">🎲 TRPG 遭遇事件：${enc.npc}</span><span class="text-xs text-slate-400">可選一種方式擲 d20 檢定</span></div><p class="text-sm text-slate-200">${enc.prompt}</p><div class="grid grid-cols-1 gap-2">${enc.actions.map((act, idx) => `<button type="button" data-enc-stage="${stageKey}" data-enc-idx="${idx}" class="btn-enc-action text-left px-3.5 py-2.5 rounded-xl bg-slate-900/90 hover:bg-indigo-500/15 border border-slate-700 hover:border-indigo-400 text-xs sm:text-sm text-slate-100 cursor-pointer transition flex items-center justify-between gap-2"><span>${act.label}</span><span class="shrink-0 text-[11px] font-mono px-2 py-0.5 rounded bg-slate-800 text-amber-300">${act.stat} DC ${act.dc}</span></button>`).join('')}</div></div>`;
+    }
+
+    function recordAnswer(qObj, chosenKey, storeObj) {
+      if (storeObj[qObj.id]) return;
+      storeObj[qObj.id] = chosenKey;
+      if (chosenKey === qObj.answer) {
+        AudioEngine.correct();
+        const bonusXp = State.playerClass === 'scholar' ? 10 : 0;
+        State.xp += (25 + bonusXp);
+        showToast(bonusXp ? '✅ 詠唱成功！獲得 25 + 10 (學者加成) XP' : '✅ 詠唱成功！獲得 25 XP');
+      } else {
+        AudioEngine.wrong();
+        let hpLoss = 15;
+        if (State.playerClass === 'ranger' && !State.rangerDodgeUsed) { State.rangerDodgeUsed = true; hpLoss = 0; showToast('🏹 語感遊俠被動發動：成功閃避本次 HP 扣血！'); }
+        else { showToast('💥 咒語反噬！HP -15，理智 -10'); }
+        State.hp = Math.max(10, State.hp - hpLoss); State.san = Math.max(10, State.san - 10);
+        State.mistakes.push({ title: qObj.title, stem: qObj.stem, chosen: chosenKey, answer: qObj.answer, rationale: qObj.rationale });
+      }
+      saveProgress(); updateHUD();
+    }
+
+    function renderQuestionCard(qObj, storeObj) {
+      const chosen = storeObj[qObj.id], isAnswered = Boolean(chosen), isCorrect = chosen === qObj.answer;
+      const elimList = State.eliminatedOpts[qObj.id] || [], hasHint = Boolean(State.revealedHints[qObj.id]);
+      return `
+        <div class="rpg-card rounded-2xl p-4 sm:p-5 space-y-3 ${isAnswered && !isCorrect ? 'border-rose-500/40' : isAnswered ? 'border-emerald-500/40' : ''}">
+          <div class="flex items-center justify-between gap-2 flex-wrap">
+            <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-sky-500/15 text-sky-300 border border-sky-500/30">${qObj.title}</span>
+            ${isAnswered ? (isCorrect ? '<span class="text-xs font-bold text-emerald-400">✔ 檢定通過</span>' : '<span class="text-xs font-bold text-rose-400">✘ 受到傷害</span>') : `<div class="flex items-center gap-1.5"><button type="button" data-use-compass="${qObj.id}" ${elimList.length > 0 || State.consumables.compass <= 0 ? 'disabled' : ''} class="px-2 py-1 rounded-lg text-[11px] bg-sky-500/15 hover:bg-sky-500/25 disabled:opacity-40 text-sky-300 border border-sky-500/30 cursor-pointer disabled:cursor-default">🧭 50/50 刪去</button><button type="button" data-use-scroll="${qObj.id}" ${hasHint || State.consumables.scroll <= 0 ? 'disabled' : ''} class="px-2 py-1 rounded-lg text-[11px] bg-amber-500/15 hover:bg-amber-500/25 disabled:opacity-40 text-amber-300 border border-amber-500/30 cursor-pointer disabled:cursor-default">📜 卷軸提示</button></div>`}
+          </div>
+          <p class="text-sm sm:text-base text-slate-100 font-medium leading-relaxed bg-slate-900/70 p-3 rounded-xl border border-slate-800">${qObj.stem}</p>
+          ${hasHint && !isAnswered ? `<div class="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-200 animate-fade-in">📜 <strong>透視卷軸線索：</strong>${qObj.hint || '請觀察時態與詞性搭配！'}</div>` : ''}
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            ${qObj.options.map(opt => {
+              const isEliminated = elimList.includes(opt.key);
+              let btnStyle = 'bg-slate-900/90 border-slate-700 text-slate-200';
+              if (isAnswered) {
+                if (opt.key === qObj.answer) btnStyle = 'bg-emerald-500/20 border-emerald-400 text-emerald-200 font-semibold';
+                else if (opt.key === chosen) btnStyle = 'bg-rose-500/20 border-rose-500 text-rose-200';
+                else btnStyle = 'bg-slate-900/40 border-slate-800 text-slate-500';
+              } else if (isEliminated) { btnStyle = 'bg-slate-950/60 border-slate-800 text-slate-600 line-through opacity-50'; }
+              return `<button type="button" data-qid="${qObj.id}" data-opt="${opt.key}" ${isAnswered || isEliminated ? 'disabled' : ''} class="option-btn min-h-[46px] text-left px-3.5 py-2.5 rounded-xl border text-sm flex items-center gap-2.5 cursor-pointer disabled:cursor-default ${btnStyle}"><span class="w-6 h-6 rounded-md bg-slate-800 text-xs font-bold flex items-center justify-center shrink-0">${opt.key}</span><span>${opt.text}</span></button>`;
+            }).join('')}
+          </div>
+          ${isAnswered ? `<div class="animate-fade-in mt-2 p-3.5 rounded-xl bg-slate-900/95 border border-amber-500/30 text-xs sm:text-sm text-slate-200 leading-relaxed">${qObj.rationale}</div>` : ''}
+        </div>
+      `;
+    }
+
+    function bindQuestionActions(questionList, storeObj, onAllDone) {
+      document.querySelectorAll('.option-btn[data-qid]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const qObj = questionList.find(x => x.id === btn.dataset.qid);
+          recordAnswer(qObj, btn.dataset.opt, storeObj);
+          if (onAllDone && Object.keys(storeObj).length === questionList.length) onAllDone();
+          render();
+        });
+      });
+      document.querySelectorAll('[data-use-compass]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const qid = btn.dataset.useCompass, qObj = questionList.find(x => x.id === qid);
+          if (!qObj || State.consumables.compass <= 0 || State.eliminatedOpts[qid]) return;
+          AudioEngine.heal(); State.consumables.compass -= 1;
+          State.eliminatedOpts[qid] = qObj.options.filter(o => o.key !== qObj.answer).map(o => o.key).slice(0, 2);
+          saveProgress(); showToast('🧭 已使用 50/50 羅盤，劃掉 2 個干擾選項！'); render();
+        });
+      });
+      document.querySelectorAll('[data-use-scroll]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const qid = btn.dataset.useScroll;
+          if (State.consumables.scroll <= 0 || State.revealedHints[qid]) return;
+          AudioEngine.heal(); State.consumables.scroll -= 1; State.revealedHints[qid] = true;
+          saveProgress(); showToast('📜 已展開透視卷軸，顯示本題考點線索！'); render();
+        });
+      });
+      document.querySelectorAll('.btn-enc-action').forEach(btn => {
+        btn.addEventListener('click', () => rollD20Encounter(btn.dataset.encStage, ENCOUNTERS[btn.dataset.encStage].actions[Number(btn.dataset.encIdx)]));
+      });
+    }
+
+    function render() {
+      saveProgress();
+      updateHUD();
+      if (State.screen === 'title') renderTitle();
+      else if (State.screen === 'act1') renderAct1();
+      else if (State.screen === 'hub') renderHub();
+      else if (State.screen === 'portal') renderPortal();
+      else if (State.screen === 'act3') renderAct3();
+      else if (State.screen === 'act4') renderAct4();
+      else if (State.screen === 'act5') renderAct5();
+      else if (State.screen === 'ending') renderEnding();
+      bindVocabChips();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function selectClass(clsId) {
+      AudioEngine.click(); State.playerClass = clsId; State.rangerDodgeUsed = false;
+      if (clsId === 'scholar') State.consumables = { elixir: 1, compass: 1, scroll: 2 };
+      else if (clsId === 'ranger') State.consumables = { elixir: 1, compass: 1, scroll: 1 };
+      else if (clsId === 'bard') State.consumables = { elixir: 2, compass: 2, scroll: 1 };
+      render();
+    }
+
+    function renderTitle() {
+      const selected = State.playerClass || 'scholar';
+      if (!State.playerClass) State.playerClass = 'scholar';
+      $main.innerHTML = `
+        <section class="rpg-card rounded-2xl overflow-hidden animate-fade-in">
+          <div class="relative bg-[#070b12]">
+            <svg viewBox="0 0 800 320" class="w-full h-44 sm:h-56 block" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <radialGradient id="bgGlow" cx="50%" cy="65%" r="60%"><stop offset="0%" stop-color="#1e293b" /><stop offset="100%" stop-color="#070b12" /></radialGradient>
+                <radialGradient id="p1" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#fbbf24" /><stop offset="65%" stop-color="#d97706" stop-opacity="0.7" /><stop offset="100%" stop-color="#070b12" stop-opacity="0" /></radialGradient>
+                <radialGradient id="p2" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#38bdf8" /><stop offset="65%" stop-color="#2563eb" stop-opacity="0.7" /><stop offset="100%" stop-color="#070b12" stop-opacity="0" /></radialGradient>
+                <radialGradient id="p3" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#e879f9" /><stop offset="65%" stop-color="#7c3aed" stop-opacity="0.7" /><stop offset="100%" stop-color="#070b12" stop-opacity="0" /></radialGradient>
+              </defs>
+              <rect width="800" height="320" fill="url(#bgGlow)" />
+              <polygon points="100,320 700,320 560,210 240,210" fill="#0f172a" />
+              <ellipse cx="290" cy="185" rx="42" ry="62" fill="url(#p1)" />
+              <ellipse cx="400" cy="180" rx="46" ry="68" fill="url(#p2)" />
+              <ellipse cx="510" cy="185" rx="42" ry="62" fill="url(#p3)" />
+              <path d="M 140 320 L 140 160 A 260 150 0 0 1 660 160 L 660 320 L 605 320 L 605 165 A 205 115 0 0 0 195 165 L 195 320 Z" fill="#1e2430" stroke="#475569" stroke-width="3" />
+              <text x="167" y="210" fill="#38bdf8" font-size="18" font-family="monospace" text-anchor="middle">ᛟ</text>
+              <text x="167" y="245" fill="#38bdf8" font-size="18" font-family="monospace" text-anchor="middle">ᚨ</text>
+              <text x="633" y="210" fill="#38bdf8" font-size="18" font-family="monospace" text-anchor="middle">ᚦ</text>
+              <text x="633" y="245" fill="#38bdf8" font-size="18" font-family="monospace" text-anchor="middle">ᚱ</text>
+              <text x="400" y="34" fill="#fbbf24" font-size="14" font-family="monospace" text-anchor="middle" opacity="0.85">THE UNDERGROUND ARCHIVE • ACTS I–V</text>
+            </svg>
+            <div class="absolute inset-0 bg-gradient-to-t from-[#0b0f17] via-transparent to-transparent pointer-events-none"></div>
+            <div class="absolute bottom-3 left-4 right-4"><span class="text-xs px-2.5 py-1 rounded-full bg-amber-500/25 text-amber-200 border border-amber-400/40 backdrop-blur-sm">高二英文段考・完全體 TRPG (Acts I–V)</span></div>
+          </div>
+          <div class="p-5 sm:p-6 space-y-4">
+            <h1 class="text-2xl sm:text-3xl font-bold text-amber-300 tracking-tight">失落記憶的地下迴廊<br><span class="text-base sm:text-lg font-medium text-sky-300">The Underground Archive: True TRPG Edition</span></h1>
+            <p class="text-sm text-slate-300 leading-relaxed">輸入姓名並選擇<strong>冒險職業</strong>，系統會自動儲存作答進度，破關後可一鍵繳交戰報至老師成績表！</p>
+            <div class="space-y-1.5">
+              <label for="input-student-name" class="block text-xs font-bold text-sky-300">🪪 步驟 1：輸入冒險者班級與姓名／座號</label>
+              <input id="input-student-name" type="text" value="${State.studentName || ''}" placeholder="例如：205 王小明" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900/90 border border-slate-700 focus:border-sky-400 focus:outline-none text-sm text-white placeholder-slate-500" />
+            </div>
+            <div class="space-y-2">
+              <div class="text-xs font-bold text-sky-300">🧙 步驟 2：選擇你的 TRPG 冒險職業</div>
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                ${Object.values(CLASSES).map(c => {
+                  const isSel = selected === c.id;
+                  return `<button type="button" data-choose-class="${c.id}" class="btn-choose-class text-left p-3 rounded-xl border transition cursor-pointer ${isSel ? 'bg-indigo-500/20 border-amber-400 ring-1 ring-amber-400/60' : 'bg-slate-900/80 border-slate-800 hover:border-slate-600'}"><div class="flex items-center justify-between mb-1"><span class="text-base font-bold text-white">${c.icon} ${c.name}</span>${isSel ? '<span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-500 text-slate-950 font-bold">已選</span>' : ''}</div><div class="text-[11px] text-slate-300 leading-snug">${c.perk}</div></button>`;
+                }).join('')}
+              </div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              <button id="btn-start-game" type="button" class="w-full min-h-[50px] rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-bold text-sm sm:text-base shadow-lg shadow-amber-500/20 cursor-pointer transition">🎲 從頭開始：進入 Act I 地下畫廊</button>
+              <button id="btn-jump-act3" type="button" class="w-full min-h-[50px] rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-bold text-sm sm:text-base shadow-lg shadow-emerald-500/20 cursor-pointer transition">🚀 直達後半段：進入 Act III–V (U7–U11)</button>
+            </div>
+          </div>
+        </section>
+      `;
+      document.getElementById('input-student-name').addEventListener('input', (e) => {
+        State.studentName = e.target.value;
+        saveProgress();
+      });
+      document.querySelectorAll('.btn-choose-class').forEach(btn => btn.addEventListener('click', () => selectClass(btn.dataset.chooseClass)));
+      document.getElementById('btn-start-game').addEventListener('click', () => { AudioEngine.portal(); State.screen = 'act1'; render(); });
+      document.getElementById('btn-jump-act3').addEventListener('click', () => { AudioEngine.portal(); State.screen = 'act3'; render(); });
+    }
+
+    function renderAct1() {
+      const answeredCount = Object.keys(State.act1Answers).length, allDone = answeredCount === ACT1_QUESTIONS.length;
+      $main.innerHTML = `
+        <div class="space-y-5 animate-fade-in">
+          <section class="rpg-card rounded-2xl p-5 space-y-4">
+            <div class="flex items-center justify-between"><h2 class="text-xl font-bold text-amber-300">📜 Act I：石門上的毛骨悚然銘文</h2><span class="text-xs text-slate-400">進度：${answeredCount} / ${ACT1_QUESTIONS.length}</span></div>
+            <div class="story-box p-4 rounded-r-xl text-sm sm:text-base text-slate-100 leading-relaxed space-y-3">
+              <p>Carved into the stone archway above you is a <span class="vocab-chip" data-vocab="chilling message">chilling message</span>: <em>"Stop! This labyrinth is definitely <span class="vocab-chip" data-vocab="not for the faint of heart">not for the faint of heart</span>."</em></p>
+              <p>As you <span class="vocab-chip" data-vocab="inspect">inspect</span> the corridor, giant pipes keep toxic gases <span class="vocab-chip" data-vocab="safely trapped">safely trapped</span> underground so explorers are not <span class="vocab-chip" data-vocab="exposed">exposed</span> to deadly <span class="vocab-chip" data-vocab="emissions">emissions</span>. Feeling completely <span class="vocab-chip" data-vocab="exhausted">exhausted</span>, you realize turning back is no longer an <span class="vocab-chip" data-vocab="alternative">alternative</span>.</p>
+              <p>Inside the gallery, the walls are <span class="vocab-chip" data-vocab="elaborately decorated">elaborately decorated</span> with posters featuring women in <span class="vocab-chip" data-vocab="flowing robes">flowing robes</span>. Mucha’s <span class="vocab-chip" data-vocab="signature style">signature style</span> <span class="vocab-chip" data-vocab="leaves a lasting impression on">leaves a lasting impression on</span> you. Beside a glowing neon cloak, a plaque reads: <em>"__[1]__ during a dark age of despair, 'Dopamine Dressing' is a powerful reminder __[2]__ what we wear shapes our mindset."</em></p>
+              <p>Suddenly, a faceless knight—<span class="vocab-chip" data-vocab="stripped of">stripped of</span> his royal status—blocks your path: <em>"Traveller! Many reckless explorers __[3]__ the ancient contract more carefully before stepping into my trap yesterday! Now, since the gate is locked, you __[4]__ answer my riddles to survive!"</em></p>
+            </div>
+          </section>
+          ${renderEncounterBox('act1')}
+          <section class="space-y-4"><h3 class="text-base font-bold text-sky-300 px-1">⚔️ 無面騎士的語法試煉（共 4 題）</h3>${ACT1_QUESTIONS.map(q => renderQuestionCard(q, State.act1Answers)).join('')}</section>
+          ${allDone ? `<div class="rpg-card rounded-2xl p-5 border-emerald-500/50 text-center space-y-3 animate-fade-in"><div class="text-2xl">🌈 試煉通過！獲得【多巴胺霓虹披風】</div><p class="text-sm text-slate-300">無面騎士化作光點消散，畫廊盡頭的三扇傳送門同時亮起！</p><button id="btn-to-hub" type="button" class="w-full sm:w-auto px-6 min-h-[48px] rounded-xl bg-gradient-to-r from-sky-500 to-indigo-500 hover:from-sky-400 hover:to-indigo-400 text-white font-bold cursor-pointer">🚪 前往 Act II：選擇傳送門</button></div>` : ''}
+        </div>
+      `;
+      bindQuestionActions(ACT1_QUESTIONS, State.act1Answers, () => addItem('dopamine'));
+      const toHub = document.getElementById('btn-to-hub');
+      if (toHub) toHub.addEventListener('click', () => { AudioEngine.portal(); State.screen = 'hub'; render(); });
+    }
+
+    function renderHub() {
+      const portalList = [PORTALS.left, PORTALS.center, PORTALS.right];
+      $main.innerHTML = `
+        <div class="space-y-5 animate-fade-in">
+          <section class="rpg-card rounded-2xl p-5 space-y-3"><h2 class="text-xl font-bold text-amber-300">🚪 Act II：選擇你的冒險傳送門</h2><p class="text-sm text-slate-300 leading-relaxed">三扇散發不同光芒的傳送門就在眼前。你可以先挑選任一扇門挑戰對應的段考核心單元，或直接前往<strong>Act III 午夜推理列車（U7–U11 後半段章節）</strong>！</p></section>
+          <div class="grid grid-cols-1 gap-4">${portalList.map(p => {
+            const cleared = State.clearedPortals.includes(p.id);
+            return `<div class="rpg-card rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${cleared ? 'border-emerald-500/40' : ''}"><div class="space-y-1.5"><div class="flex items-center gap-2 flex-wrap"><span class="text-xs px-2.5 py-0.5 rounded-full border ${p.badgeColor}">${p.subtitle}</span>${cleared ? '<span class="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">✔ 已通關</span>' : ''}</div><h3 class="text-lg font-bold text-white">${p.name}</h3><p class="text-xs sm:text-sm text-slate-400">${p.introCn.slice(0, 56)}...</p></div><button type="button" data-portal="${p.id}" class="btn-enter-portal shrink-0 min-h-[46px] px-5 rounded-xl font-bold text-sm cursor-pointer transition ${cleared ? 'bg-slate-800 hover:bg-slate-700 text-emerald-300 border border-emerald-500/30' : 'bg-amber-500 hover:bg-amber-400 text-slate-950'}">${cleared ? '再次檢視' : '踏入傳送門 →'}</button></div>`;
+          }).join('')}</div>
+          <div class="rpg-card rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 border-emerald-500/40"><div class="text-sm text-emerald-200">已完成 <strong>${State.clearedPortals.length} / 3</strong> 座傳送門！</div><div class="flex flex-wrap gap-2 w-full sm:w-auto"><button id="btn-hub-to-act3" type="button" class="flex-1 sm:flex-initial px-5 min-h-[44px] rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 font-bold text-sm cursor-pointer">🚆 前往 Act III：午夜推理列車 →</button><button id="btn-view-ending" type="button" class="px-4 min-h-[44px] rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/30 font-bold text-sm cursor-pointer">🏆 結算面板</button></div></div>
+        </div>
+      `;
+      document.querySelectorAll('.btn-enter-portal').forEach(btn => btn.addEventListener('click', () => { AudioEngine.portal(); State.activePortal = btn.dataset.portal; if (!State.portalAnswers[State.activePortal]) State.portalAnswers[State.activePortal] = {}; State.screen = 'portal'; render(); }));
+      document.getElementById('btn-hub-to-act3').addEventListener('click', () => { AudioEngine.portal(); State.screen = 'act3'; render(); });
+      document.getElementById('btn-view-ending').addEventListener('click', () => { AudioEngine.portal(); State.screen = 'ending'; render(); });
+    }
+
+    function renderPortal() {
+      const p = PORTALS[State.activePortal], store = State.portalAnswers[p.id] || {}, mcDone = Object.keys(store).length === p.questions.length, needsChunk = Boolean(p.chunkChallenge), allCleared = mcDone && (!needsChunk || State.chunkSolved);
+      if (allCleared && !State.clearedPortals.includes(p.id)) { State.clearedPortals.push(p.id); addItem(p.rewardId); }
+      let chunkHtml = '';
+      if (needsChunk) {
+        const target = p.chunkChallenge.chunks, shuffled = [target[2], target[4], target[0], target[3], target[1]], selectedSet = new Set(State.chunkOrder);
+        chunkHtml = `<div class="rpg-card rounded-2xl p-5 space-y-4 ${State.chunkSolved ? 'border-emerald-500/50' : 'border-violet-500/40'}"><div class="flex items-center justify-between"><span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-violet-500/20 text-violet-300 border border-violet-500/30">${p.chunkChallenge.title}</span>${State.chunkSolved ? '<span class="text-xs font-bold text-emerald-400">✔ 戰報發送成功</span>' : ''}</div><p class="text-sm text-slate-200 leading-relaxed">${p.chunkChallenge.promptCn}</p><div class="min-h-[64px] p-3 rounded-xl bg-slate-950/90 border border-slate-700 flex flex-wrap gap-2 items-center">${State.chunkOrder.length === 0 ? '<span class="text-xs text-slate-500">依序點擊下方語塊來組裝句子…</span>' : State.chunkOrder.map((idx, pos) => `<button type="button" data-remove-pos="${pos}" ${State.chunkSolved ? 'disabled' : ''} class="px-2.5 py-1.5 rounded-lg bg-sky-500/20 border border-sky-400/50 text-sky-200 text-xs sm:text-sm cursor-pointer">${target[idx]}</button>`).join('')}</div><div class="flex flex-wrap gap-2">${shuffled.map(text => { const origIdx = target.indexOf(text), used = selectedSet.has(origIdx); return `<button type="button" data-pick-idx="${origIdx}" ${used || State.chunkSolved ? 'disabled' : ''} class="px-3 py-2 rounded-xl border text-xs sm:text-sm cursor-pointer transition ${used ? 'bg-slate-900 border-slate-800 text-slate-600 cursor-default' : 'bg-slate-800 hover:bg-slate-700 border-slate-600 text-slate-100'}">${text}</button>`; }).join('')}</div><div class="flex gap-2.5">${!State.chunkSolved ? `<button id="btn-reset-chunk" type="button" class="px-4 min-h-[42px] rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm cursor-pointer">↺ 重置</button><button id="btn-check-chunk" type="button" class="flex-1 min-h-[42px] rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-sm cursor-pointer">📡 發送緊急戰報</button>` : `<div class="w-full p-3 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-xs sm:text-sm text-emerald-200"><strong>滿分架構解析：</strong> <em>When facing...</em>（主動分詞構句）＋ <em>should have adopted</em>（過去事實相反）＋ <em>may as well + 原形動詞</em>（不妨…）。</div>`}</div></div>`;
+      }
+      $main.innerHTML = `<div class="space-y-5 animate-fade-in"><div class="flex items-center justify-between"><button id="btn-back-hub" type="button" class="min-h-[38px] px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs sm:text-sm text-slate-300 cursor-pointer">← 返回傳送門大廳</button><span class="text-xs px-2.5 py-1 rounded-full border ${p.badgeColor}">${p.subtitle}</span></div><section class="rpg-card rounded-2xl p-5 space-y-4"><h2 class="text-xl font-bold text-amber-300">${p.name}</h2><p class="text-sm text-slate-300 leading-relaxed">${p.introCn}</p><div class="story-box p-4 rounded-r-xl text-sm sm:text-base text-slate-100 leading-relaxed">${p.storyEn}</div></section><section class="space-y-4"><h3 class="text-base font-bold text-sky-300 px-1">⚔️ 區域守護者試煉</h3>${p.questions.map(q => renderQuestionCard(q, store)).join('')}${chunkHtml}</section>${allCleared ? `<div class="rpg-card rounded-2xl p-5 border-emerald-500/50 text-center space-y-3 animate-fade-in"><div class="text-xl font-bold text-emerald-300">✨ ${p.ending.title}</div><p class="text-sm text-slate-300">${p.ending.summary}</p><div class="flex flex-col sm:flex-row gap-2.5 justify-center pt-1"><button id="btn-portal-hub" type="button" class="px-5 min-h-[46px] rounded-xl bg-slate-800 hover:bg-slate-700 text-sky-300 font-semibold text-sm border border-sky-500/30 cursor-pointer">🚪 探索其他傳送門 (${State.clearedPortals.length}/3)</button><button id="btn-portal-act3" type="button" class="px-6 min-h-[46px] rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 font-bold text-sm cursor-pointer">🚆 進入 Act III：午夜推理列車 (U7–8) →</button><button id="btn-portal-end" type="button" class="px-5 min-h-[46px] rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 font-bold text-sm border border-amber-500/30 cursor-pointer">🏆 進入最終結算</button></div></div>` : ''}</div>`;
+      document.getElementById('btn-back-hub').addEventListener('click', () => { AudioEngine.click(); State.screen = 'hub'; render(); });
+      bindQuestionActions(p.questions, store, null);
+      if (needsChunk && !State.chunkSolved) {
+        document.querySelectorAll('[data-pick-idx]').forEach(btn => btn.addEventListener('click', () => { AudioEngine.click(); State.chunkOrder.push(Number(btn.dataset.pickIdx)); render(); }));
+        document.querySelectorAll('[data-remove-pos]').forEach(btn => btn.addEventListener('click', () => { AudioEngine.click(); State.chunkOrder.splice(Number(btn.dataset.removePos), 1); render(); }));
+        document.getElementById('btn-reset-chunk').addEventListener('click', () => { AudioEngine.click(); State.chunkOrder = []; render(); });
+        document.getElementById('btn-check-chunk').addEventListener('click', () => {
+          if (State.chunkOrder.length === 5 && State.chunkOrder.every((val, i) => val === i)) { AudioEngine.correct(); State.chunkSolved = true; State.xp += 50; showToast('📡 緊急戰報發送成功！獲得 50 XP'); render(); }
+          else { AudioEngine.wrong(); State.san = Math.max(10, State.san - 5); showToast('❌ 語序尚未正確，提示：先放分詞構句「When facing...」，再接過去後悔！'); updateHUD(); }
+        });
+      }
+      const bHub = document.getElementById('btn-portal-hub'); if (bHub) bHub.addEventListener('click', () => { AudioEngine.click(); State.screen = 'hub'; render(); });
+      const bAct3 = document.getElementById('btn-portal-act3'); if (bAct3) bAct3.addEventListener('click', () => { AudioEngine.portal(); State.screen = 'act3'; render(); });
+      const bEnd = document.getElementById('btn-portal-end'); if (bEnd) bEnd.addEventListener('click', () => { AudioEngine.portal(); State.screen = 'ending'; render(); });
+    }
+
+    function renderAct3() {
+      const answeredCount = Object.keys(State.act3Answers).length, allDone = answeredCount === ACT3_QUESTIONS.length;
+      $main.innerHTML = `<div class="space-y-5 animate-fade-in"><section class="rpg-card rounded-2xl p-5 space-y-4"><div class="flex items-center justify-between flex-wrap gap-2"><h2 class="text-xl font-bold text-amber-300">🚆 Act III：午夜蘇活區的推理列車（U7–U8）</h2><span class="text-xs px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">進度：${answeredCount} / ${ACT3_QUESTIONS.length}</span></div><div class="story-box p-4 rounded-r-xl text-sm sm:text-base text-slate-100 leading-relaxed space-y-3"><p>Before boarding the Midnight Express, the conductor asks you to <span class="vocab-chip" data-vocab="make a note of">make a note of</span> the passengers’ <span class="vocab-chip" data-vocab="seating preferences">seating preferences</span>. Inside the carriage, the vibrant artistic atmosphere of New York’s SoHo district immediately <span class="vocab-chip" data-vocab="leaves a lasting impression on">leaves a lasting impression on</span> every traveller.</p><p>Across the aisle sits the phantom of Agatha Christie. Wearing an elegant coat that clearly <span class="vocab-chip" data-vocab="set them apart from">sets her apart from</span> the crowd, she smiles mysteriously: <em>"In my detective plays, I never spoil the ending; the final verdict is always <span class="vocab-chip" data-vocab="left up to">left up to</span> the audience!"</em></p><p>Outside the window, the train speeds along Australia’s famous "Big Lap," passing snow-covered hills <span class="vocab-chip" data-vocab="along the way">along the way</span>. Solving this mystery may seem like a lot of effort, but the payoff is certainly <span class="vocab-chip" data-vocab="worthwhile">worthwhile</span>!</p></div></section>${renderEncounterBox('act3')}<section class="space-y-4"><h3 class="text-base font-bold text-sky-300 px-1">⚔️ 推理列車長的語塊檢定（共 4 題）</h3>${ACT3_QUESTIONS.map(q => renderQuestionCard(q, State.act3Answers)).join('')}</section>${allDone ? `<div class="rpg-card rounded-2xl p-5 border-emerald-500/50 text-center space-y-3 animate-fade-in"><div class="text-2xl">🕵️ 推理成功！獲得【阿嘉莎的蘇活區懷錶】</div><button id="btn-to-act4" type="button" class="w-full sm:w-auto px-6 min-h-[48px] rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-bold cursor-pointer">⚡ 前往 Act IV：霓虹實驗室的能量飲風暴 (Unit 9) →</button></div>` : ''}</div>`;
+      bindQuestionActions(ACT3_QUESTIONS, State.act3Answers, () => addItem('pocketWatch'));
+      const toAct4 = document.getElementById('btn-to-act4'); if (toAct4) toAct4.addEventListener('click', () => { AudioEngine.portal(); State.screen = 'act4'; render(); });
+    }
+
+    function renderAct4() {
+      const answeredCount = Object.keys(State.act4Answers).length, allDone = answeredCount === ACT4_QUESTIONS.length;
+      $main.innerHTML = `<div class="space-y-5 animate-fade-in"><section class="rpg-card rounded-2xl p-5 space-y-4"><div class="flex items-center justify-between flex-wrap gap-2"><h2 class="text-xl font-bold text-emerald-300">⚡ Act IV：霓虹實驗室的能量飲風暴（Unit 9 & 分詞同位語）</h2><span class="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">進度：${answeredCount} / ${ACT4_QUESTIONS.length}</span></div><div class="story-box p-4 rounded-r-xl text-sm sm:text-base text-slate-100 leading-relaxed space-y-3"><p>On the lab counter sits a glowing can of "Hyper-Pulse." Advertised as a miracle potion for exam preparation, this energy drink promises to <span class="vocab-chip" data-vocab="trigger">trigger</span> an instant rush of alertness.</p><p>However, medical files on the desk reveal a darker truth. Consuming excessive caffeine and sugar late at night will severely <span class="vocab-chip" data-vocab="interfere with">interfere with</span> your sleep cycle, leading to a sharp <span class="vocab-chip" data-vocab="decline">decline</span> in memory and heart stability the next morning.</p><p>A hologram warning flashes on the wall: <em>"Nicknamed the 'liquid stamina,' this beverage is actually a trap! Never ignore the scientific fact that artificial stimulation cannot replace genuine rest."</em></p></div></section>${renderEncounterBox('act4')}<section class="space-y-4"><h3 class="text-base font-bold text-sky-300 px-1">⚔️ 能量飲生化守衛試煉（共 4 題）</h3>${ACT4_QUESTIONS.map(q => renderQuestionCard(q, State.act4Answers)).join('')}</section>${allDone ? `<div class="rpg-card rounded-2xl p-5 border-emerald-500/50 text-center space-y-3 animate-fade-in"><div class="text-2xl">🧪 解毒成功！獲得【清醒脈衝解毒劑】</div><button id="btn-to-act5" type="button" class="w-full sm:w-auto px-6 min-h-[48px] rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 hover:from-fuchsia-400 hover:to-violet-500 text-white font-bold cursor-pointer">🏛️ 前往 Act V 最終幕：包浩斯核心與空氣捕捉巨塔 (U10–11) →</button></div>` : ''}</div>`;
+      bindQuestionActions(ACT4_QUESTIONS, State.act4Answers, () => addItem('detoxElixir'));
+      const toAct5 = document.getElementById('btn-to-act5'); if (toAct5) toAct5.addEventListener('click', () => { AudioEngine.portal(); State.screen = 'act5'; render(); });
+    }
+
+    function renderAct5() {
+      const answeredCount = Object.keys(State.act5Answers).length, mcDone = answeredCount === ACT5_QUESTIONS.length, allCleared = mcDone && State.act5ChunkSolved;
+      if (allCleared && !State.inventory.includes('bauhausPrism')) addItem('bauhausPrism');
+      const target = ACT5_CHUNK_CHALLENGE.chunks, shuffled = [target[3], target[0], target[4], target[1], target[2]], selectedSet = new Set(State.act5ChunkOrder);
+      $main.innerHTML = `<div class="space-y-5 animate-fade-in"><section class="rpg-card rounded-2xl p-5 space-y-4"><div class="flex items-center justify-between flex-wrap gap-2"><h2 class="text-xl font-bold text-fuchsia-300">🏛️ Act V 最終章：包浩斯極簡核心與空氣捕捉巨塔（U10–U11）</h2><span class="text-xs px-2.5 py-0.5 rounded-full bg-fuchsia-500/20 text-fuchsia-300 border border-fuchsia-500/30">終極魔王戰</span></div><div class="story-box p-4 rounded-r-xl text-sm sm:text-base text-slate-100 leading-relaxed space-y-3"><p>Founded in 1919, the Bauhaus school believed that <em>"form follows function."</em> Unlike Mucha’s highly decorative approach, Bauhaus designers argued that unnecessary ornaments should be stripped away so users can operate modern devices efficiently without being <span class="vocab-chip" data-vocab="distracted">distracted</span> by excessive decoration.</p><p>Outside the glass tower, Direct Air Capture (DAC) machines act like giant mechanical trees, capturing CO2 directly from the ambient air—completely <span class="vocab-chip" data-vocab="independent of">independent of</span> specific factory chimneys. Building thousands of these facilities is <span class="vocab-chip" data-vocab="equivalent to">equivalent to</span> planting millions of real trees.</p><p>At the centre of the hall stands an ancient Norse runestone. Though the Viking invasion caused great <span class="vocab-chip" data-vocab="controversy">controversy</span> and upheaval in history, it left a <span class="vocab-chip" data-vocab="profound">profound</span> impact on everyday English words rooted in daily survival.</p></div></section>${renderEncounterBox('act5')}<section class="space-y-4"><h3 class="text-base font-bold text-sky-300 px-1">⚔️ 最終審判：跨單元整合選擇檢定（共 4 題）</h3>${ACT5_QUESTIONS.map(q => renderQuestionCard(q, State.act5Answers)).join('')}<div class="rpg-card rounded-2xl p-5 space-y-4 ${State.act5ChunkSolved ? 'border-emerald-500/50' : 'border-fuchsia-500/40'}"><div class="flex items-center justify-between"><span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-fuchsia-500/20 text-fuchsia-300 border border-fuchsia-500/30">${ACT5_CHUNK_CHALLENGE.title}</span>${State.act5ChunkSolved ? '<span class="text-xs font-bold text-emerald-400">✔ 封印解除</span>' : ''}</div><p class="text-sm text-slate-200 leading-relaxed">${ACT5_CHUNK_CHALLENGE.promptCn}</p><div class="min-h-[64px] p-3 rounded-xl bg-slate-950/90 border border-slate-700 flex flex-wrap gap-2 items-center">${State.act5ChunkOrder.length === 0 ? '<span class="text-xs text-slate-500">依序點擊下方語塊來組裝最終封印句…</span>' : State.act5ChunkOrder.map((idx, pos) => `<button type="button" data-act5-remove="${pos}" ${State.act5ChunkSolved ? 'disabled' : ''} class="px-2.5 py-1.5 rounded-lg bg-fuchsia-500/20 border border-fuchsia-400/50 text-fuchsia-200 text-xs sm:text-sm cursor-pointer">${target[idx]}</button>`).join('')}</div><div class="flex flex-wrap gap-2">${shuffled.map(text => { const origIdx = target.indexOf(text), used = selectedSet.has(origIdx); return `<button type="button" data-act5-pick="${origIdx}" ${used || State.act5ChunkSolved ? 'disabled' : ''} class="px-3 py-2 rounded-xl border text-xs sm:text-sm cursor-pointer transition ${used ? 'bg-slate-900 border-slate-800 text-slate-600 cursor-default' : 'bg-slate-800 hover:bg-slate-700 border-slate-600 text-slate-100'}">${text}</button>`; }).join('')}</div><div class="flex gap-2.5">${!State.act5ChunkSolved ? `<button id="btn-reset-act5-chunk" type="button" class="px-4 min-h-[42px] rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm cursor-pointer">↺ 重置</button><button id="btn-check-act5-chunk" type="button" class="flex-1 min-h-[42px] rounded-xl bg-fuchsia-600 hover:bg-fuchsia-500 text-white font-bold text-sm cursor-pointer">✨ 詠唱終極封印句</button>` : `<div class="w-full p-3 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-xs sm:text-sm text-emerald-200"><strong>完美句構拆解：</strong> <em>First coined during the pandemic,</em>（被動分詞構句）＋ <em>a powerful reminder that...</em>（同位語名詞子句）＋ <em>the visual cues (that) we encounter or wear daily</em>（關係子句修飾主詞）＋ <em>profoundly shape our mindset.</em></div>`}</div></div></section>${allCleared ? `<div class="rpg-card rounded-2xl p-6 border-amber-400/60 text-center space-y-3 animate-fade-in"><div class="text-2xl font-bold text-amber-300">🏛️ 終章完全突破！獲得【包浩斯幾何聖杯】</div><button id="btn-act5-ending" type="button" class="w-full sm:w-auto px-8 min-h-[50px] rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-bold text-base cursor-pointer shadow-lg shadow-amber-500/20">🏆 查看五幕完整榮譽結算</button></div>` : ''}</div>`;
+      bindQuestionActions(ACT5_QUESTIONS, State.act5Answers, null);
+      if (!State.act5ChunkSolved) {
+        document.querySelectorAll('[data-act5-pick]').forEach(btn => btn.addEventListener('click', () => { AudioEngine.click(); State.act5ChunkOrder.push(Number(btn.dataset.act5Pick)); render(); }));
+        document.querySelectorAll('[data-act5-remove]').forEach(btn => btn.addEventListener('click', () => { AudioEngine.click(); State.act5ChunkOrder.splice(Number(btn.dataset.act5Remove), 1); render(); }));
+        document.getElementById('btn-reset-act5-chunk').addEventListener('click', () => { AudioEngine.click(); State.act5ChunkOrder = []; render(); });
+        document.getElementById('btn-check-act5-chunk').addEventListener('click', () => {
+          if (State.act5ChunkOrder.length === 5 && State.act5ChunkOrder.every((val, i) => val === i)) { AudioEngine.correct(); State.act5ChunkSolved = true; State.xp += 60; showToast('🌟 終極封印解除！獲得 60 XP'); render(); }
+          else { AudioEngine.wrong(); State.san = Math.max(10, State.san - 5); showToast('❌ 語序尚未正確，提示：先放句首過去分詞「First coined...」，再接「this trend serves as a powerful reminder」與「that...」同位語！'); updateHUD(); }
+        });
+      }
+      const endBtn = document.getElementById('btn-act5-ending'); if (endBtn) endBtn.addEventListener('click', () => { AudioEngine.portal(); State.screen = 'ending'; render(); });
+    }
+
+    function calcAccuracy(qList, storeObj) {
+      const answered = Object.keys(storeObj).length;
+      if (answered === 0) return '尚未作答';
+      let correct = 0; qList.forEach(q => { if (storeObj[q.id] === q.answer) correct += 1; });
+      return `${correct}/${qList.length} (${Math.round((correct / qList.length) * 100)}%)`;
+    }
+
+    function buildBattleReport() {
+      const clsObj = CLASSES[State.playerClass] || CLASSES.scholar;
+      const lines = [
+        '【高二英文 TRPG｜地下迴廊戰報】',
+        State.studentName && State.studentName.trim() ? `🪪 學生姓名：${State.studentName.trim()}` : '🪪 學生姓名：（未填寫）',
+        `🎭 冒險職業：${clsObj.icon} ${clsObj.name}`,
+        `❤️ HP：${State.hp}/${State.maxHp} ｜ 🔮 理智：${State.san}/${State.maxSan} ｜ ✨ 總 XP：${State.xp}`,
+        `🎒 收集裝備：${State.inventory.length}/8 件`,
+        '',
+        '📊 各幕作答率：',
+        `- Act I 地下畫廊：${calcAccuracy(ACT1_QUESTIONS, State.act1Answers)}`,
+        `- Act II 左之門（諾曼晚宴）：${calcAccuracy(PORTALS.left.questions, State.portalAnswers.left || {})}`,
+        `- Act II 中之門（沙漠溫室）：${calcAccuracy(PORTALS.center.questions, State.portalAnswers.center || {})}`,
+        `- Act II 右之門（太空軌道）：${calcAccuracy(PORTALS.right.questions, State.portalAnswers.right || {})}${State.chunkSolved ? ' + 戰報重組✔' : ''}`,
+        `- Act III 午夜列車 (U7-8)：${calcAccuracy(ACT3_QUESTIONS, State.act3Answers)}`,
+        `- Act IV 能量飲實驗室 (U9)：${calcAccuracy(ACT4_QUESTIONS, State.act4Answers)}`,
+        `- Act V 包浩斯終章 (U10-11)：${calcAccuracy(ACT5_QUESTIONS, State.act5Answers)}${State.act5ChunkSolved ? ' + 封印陣✔' : ''}`,
+        ''
+      ];
+      if (State.mistakes.length === 0) lines.push('🌟 錯題紀錄：0 題（全對通關！）');
+      else {
+        lines.push(`❌ 錯題清單（共 ${State.mistakes.length} 題）：`);
+        State.mistakes.forEach((m, idx) => lines.push(`${idx + 1}. ${m.title}｜選 (${m.chosen}) → 正解 (${m.answer})`));
+      }
+      return lines.join('\n');
+    }
+
+    async function submitBattleReport() {
+      if (!State.studentName || !State.studentName.trim()) {
+        const nameInput = prompt('請輸入你的「班級與姓名／座號」（例如：205 王小明）：');
+        if (!nameInput || !nameInput.trim()) {
+          showToast('⚠️ 需要先填寫姓名才能繳交成績喔！');
+          return;
+        }
+        State.studentName = nameInput.trim();
+        saveProgress();
+      }
+
+      const btn = document.getElementById('btn-submit-sheet');
+      if (btn) { btn.disabled = true; btn.textContent = '⏳ 正在傳送戰報至老師試算表...'; }
+
+      const clsObj = CLASSES[State.playerClass] || CLASSES.scholar;
+      const totalCleared = State.clearedPortals.length;
+      const act3Done = Object.keys(State.act3Answers).length === ACT3_QUESTIONS.length;
+      const act4Done = Object.keys(State.act4Answers).length === ACT4_QUESTIONS.length;
+      const act5Done = Object.keys(State.act5Answers).length === ACT5_QUESTIONS.length && State.act5ChunkSolved;
+
+      const payload = {
+        secret: WEBHOOK_SECRET,
+        studentName: State.studentName.trim(),
+        className: `${clsObj.icon} ${clsObj.name}`,
+        hp: State.hp,
+        san: State.san,
+        xp: State.xp,
+        itemCount: `${State.inventory.length}/8`,
+        act1: calcAccuracy(ACT1_QUESTIONS, State.act1Answers),
+        act2Left: calcAccuracy(PORTALS.left.questions, State.portalAnswers.left || {}),
+        act2Center: calcAccuracy(PORTALS.center.questions, State.portalAnswers.center || {}),
+        act2Right: calcAccuracy(PORTALS.right.questions, State.portalAnswers.right || {}) + (State.chunkSolved ? ' + 重組✔' : ''),
+        act3: calcAccuracy(ACT3_QUESTIONS, State.act3Answers),
+        act4: calcAccuracy(ACT4_QUESTIONS, State.act4Answers),
+        act5: calcAccuracy(ACT5_QUESTIONS, State.act5Answers) + (State.act5ChunkSolved ? ' + 封印✔' : ''),
+        mistakeCount: State.mistakes.length,
+        mistakeDetail: State.mistakes.map(m => `${m.title}(選${m.chosen}/正${m.answer})`).join('；'),
+        fullClear: totalCleared === 3 && act3Done && act4Done && act5Done
+      };
+
+      try {
+        const res = await fetch(WEBHOOK_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(payload)
+        });
+        const result = await res.json();
+        if (result.ok) {
+          State.reportSubmitted = true;
+          saveProgress();
+          AudioEngine.correct();
+          showToast('✅ 戰報已自動寫入老師的 Google Sheets！');
+          if (btn) btn.textContent = '✅ 已繳交至老師成績表';
+        } else {
+          throw new Error(result.error || 'Unknown error');
+        }
+      } catch (err) {
+        AudioEngine.wrong();
+        showToast('❌ 傳送失敗，請改按「複製戰報」貼到 Line');
+        if (btn) { btn.disabled = false; btn.textContent = '🚀 重試繳交至老師成績表'; }
+      }
+    }
+
+    function copyBattleReport() {
+      const text = buildBattleReport();
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => { AudioEngine.correct(); showToast('✅ 戰報已複製！可直接貼到 Line 傳給老師'); }).catch(() => fallbackCopyText(text));
+      } else { fallbackCopyText(text); }
+    }
+
+    function fallbackCopyText(text) {
+      const ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.focus(); ta.select();
+      try { document.execCommand('copy'); AudioEngine.correct(); showToast('✅ 戰報已複製！可直接貼到 Line 傳給老師'); }
+      catch (e) { showToast('⚠️ 無法自動複製，請手動全選下方戰報框複製'); }
+      document.body.removeChild(ta);
+    }
+
+    function renderEnding() {
+      const totalCleared = State.clearedPortals.length;
+      const act3Done = Object.keys(State.act3Answers).length === ACT3_QUESTIONS.length;
+      const act4Done = Object.keys(State.act4Answers).length === ACT4_QUESTIONS.length;
+      const act5Done = Object.keys(State.act5Answers).length === ACT5_QUESTIONS.length && State.act5ChunkSolved;
+      const isFullClear = totalCleared === 3 && act3Done && act4Done && act5Done;
+      const isTrueEnding = isFullClear && State.mistakes.length === 0;
+      const endingTitle = isTrueEnding ? '🌟 隱藏真結局：全五幕零失誤的時空文法宗師' : isFullClear ? '👑 傳奇結局：制霸五幕的地下迴廊大宗師' : (act3Done && act4Done && act5Done) ? '⚡ 後半段完全破關：U7–U11 實戰征服者' : totalCleared === 3 ? '🏆 黃金結局：三門全破的迴廊英雄' : (State.clearedPortals.length > 0 ? PORTALS[State.clearedPortals[State.clearedPortals.length - 1]].ending.title : '🎲 地下迴廊階段戰報結算');
+      const endingDesc = isTrueEnding ? '太神了！你零失誤通關了第一幕、三座傳送門以及後半段 Act III～Act V 的全部關卡，集齊 8 件傳奇裝備！' : isFullClear ? '你成功征服了 Act I 到 Act V 的所有章節！點擊下方按鈕即可自動繳交戰報！' : `你目前已收集 ${State.inventory.length} / 8 件裝備（三門完成 ${totalCleared}/3，後半段 Act III–V 完成 ${[act3Done, act4Done, act5Done].filter(Boolean).length}/3）。`;
+
+      $main.innerHTML = `
+        <section class="rpg-card rounded-2xl p-6 text-center space-y-5 animate-fade-in">
+          <div class="text-4xl">${isTrueEnding ? '👑' : '🎖️'}</div>
+          <h2 class="text-2xl font-bold text-amber-300">${endingTitle}</h2>
+          <p class="text-sm sm:text-base text-slate-300 leading-relaxed">${endingDesc}</p>
+          <div class="grid grid-cols-3 gap-3 bg-slate-900/90 p-4 rounded-xl border border-slate-800 text-sm">
+            <div><div class="text-slate-400 text-xs">總經驗值</div><div class="text-amber-300 font-bold text-lg">${State.xp} XP</div></div>
+            <div><div class="text-slate-400 text-xs">收集裝備</div><div class="text-emerald-300 font-bold text-lg">${State.inventory.length} / 8</div></div>
+            <div><div class="text-slate-400 text-xs">錯題數</div><div class="text-rose-300 font-bold text-lg">${State.mistakes.length} 題</div></div>
+          </div>
+          <div class="text-left bg-slate-950/90 border border-slate-800 rounded-xl p-3.5 text-xs text-slate-300 font-mono whitespace-pre-wrap max-h-48 overflow-y-auto">${buildBattleReport()}</div>
+          <div class="flex flex-wrap gap-3 justify-center pt-2">
+            <button id="btn-submit-sheet" type="button" ${State.reportSubmitted ? 'disabled' : ''} class="px-5 min-h-[46px] rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 disabled:opacity-60 text-slate-950 font-bold text-sm cursor-pointer shadow-lg shadow-emerald-500/20">${State.reportSubmitted ? '✅ 已繳交至老師成績表' : '🚀 一鍵繳交戰報至老師成績表'}</button>
+            <button id="btn-copy-report" type="button" class="px-5 min-h-[46px] rounded-xl bg-gradient-to-r from-indigo-500 to-sky-500 hover:from-indigo-400 hover:to-sky-400 text-white font-bold text-sm cursor-pointer shadow-lg shadow-sky-500/20">📋 複製戰報（Line 備援）</button>
+            ${!act3Done || !act4Done || !act5Done ? `<button id="btn-end-act3" type="button" class="px-5 min-h-[46px] rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-300 border border-emerald-500/30 font-bold text-sm cursor-pointer">🚆 挑戰後半段 (Act III–V)</button>` : ''}
+            ${totalCleared < 3 ? `<button id="btn-end-hub" type="button" class="px-5 min-h-[46px] rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-sm cursor-pointer">🚪 返回 Act II 大廳</button>` : ''}
+            <button id="btn-end-mistakes" type="button" class="px-5 min-h-[46px] rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 font-bold text-sm border border-amber-500/30 cursor-pointer">📖 檢視圖鑑與錯題</button>
+            <button id="btn-restart" type="button" class="px-5 min-h-[46px] rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-sm cursor-pointer">↺ 重新開始</button>
+          </div>
+        </section>
+      `;
+      document.getElementById('btn-submit-sheet').addEventListener('click', submitBattleReport);
+      document.getElementById('btn-copy-report').addEventListener('click', copyBattleReport);
+      const bAct3 = document.getElementById('btn-end-act3'); if (bAct3) bAct3.addEventListener('click', () => { AudioEngine.portal(); State.screen = (!act3Done ? 'act3' : !act4Done ? 'act4' : 'act5'); render(); });
+      const bHub = document.getElementById('btn-end-hub'); if (bHub) bHub.addEventListener('click', () => { AudioEngine.click(); State.screen = 'hub'; render(); });
+      document.getElementById('btn-end-mistakes').addEventListener('click', () => { AudioEngine.click(); State.codexTab = State.mistakes.length > 0 ? 'mistakes' : 'vocab'; openCodexModal(); });
+      document.getElementById('btn-restart').addEventListener('click', () => {
+        AudioEngine.click();
+        State = JSON.parse(JSON.stringify(DEFAULT_STATE));
+        saveProgress();
+        render();
+      });
+    }
+
+    document.querySelectorAll('.nav-jump-btn').forEach(btn => btn.addEventListener('click', () => { AudioEngine.click(); State.screen = btn.dataset.navScreen; render(); }));
+    document.getElementById('quick-elixir').addEventListener('click', useElixir);
+    document.getElementById('dice-close').addEventListener('click', () => { document.getElementById('dice-modal').classList.add('hidden'); document.getElementById('dice-modal').classList.remove('flex'); render(); });
+
+    function bindVocabChips() {
+      document.querySelectorAll('.vocab-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+          AudioEngine.click(); const v = VOCAB_DB[chip.dataset.vocab]; if (!v) return;
+          document.getElementById('vm-tag').textContent = v.tag; document.getElementById('vm-word').textContent = v.word;
+          document.getElementById('vm-meaning').textContent = v.meaning; document.getElementById('vm-morph').textContent = v.morph;
+          document.getElementById('vm-chunk').textContent = v.chunk;
+          document.getElementById('vocab-modal').classList.remove('hidden'); document.getElementById('vocab-modal').classList.add('flex');
+        });
+      });
+    }
+
+    function openCodexModal() {
+      const modal = document.getElementById('codex-modal'), body = document.getElementById('codex-body'), tabVocab = document.getElementById('tab-vocab'), tabMistakes = document.getElementById('tab-mistakes');
+      if (State.codexTab === 'vocab') {
+        tabVocab.className = 'flex-1 py-2 rounded-lg text-sm font-medium bg-amber-500/20 text-amber-200 border border-amber-500/40 cursor-pointer';
+        tabMistakes.className = 'flex-1 py-2 rounded-lg text-sm font-medium bg-slate-800 text-slate-300 border border-slate-700 cursor-pointer';
+        body.innerHTML = Object.values(VOCAB_DB).map(v => `<div class="p-3 rounded-xl bg-slate-900/90 border border-slate-800 space-y-1"><div class="flex items-center justify-between gap-2"><strong class="text-amber-300">${v.word}</strong><span class="text-[11px] text-slate-400">${v.tag}</span></div><div class="text-slate-200 text-xs">${v.meaning}</div><div class="text-sky-300 text-xs">拆解：${v.morph}</div><div class="text-emerald-300 text-xs font-mono">語塊：${v.chunk}</div></div>`).join('');
+      } else {
+        tabMistakes.className = 'flex-1 py-2 rounded-lg text-sm font-medium bg-rose-500/20 text-rose-200 border border-rose-500/40 cursor-pointer';
+        tabVocab.className = 'flex-1 py-2 rounded-lg text-sm font-medium bg-slate-800 text-slate-300 border border-slate-700 cursor-pointer';
+        body.innerHTML = State.mistakes.length === 0 ? '<div class="text-center py-8 text-slate-400">目前沒有錯題紀錄，繼續保持全對紀錄！</div>' : State.mistakes.map(m => `<div class="p-3.5 rounded-xl bg-slate-900/90 border border-rose-500/30 space-y-1.5"><div class="text-xs font-bold text-rose-300">${m.title}（你的選項：${m.chosen} → 正解：${m.answer}）</div><div class="text-slate-200 text-xs font-medium">${m.stem}</div><div class="text-slate-300 text-xs leading-relaxed">${m.rationale}</div></div>`).join('');
+      }
+      modal.classList.remove('hidden'); modal.classList.add('flex');
+    }
+
+    document.getElementById('vm-close').addEventListener('click', () => { document.getElementById('vocab-modal').classList.add('hidden'); document.getElementById('vocab-modal').classList.remove('flex'); });
+    document.getElementById('btn-inventory').addEventListener('click', () => {
+      AudioEngine.click();
+      const consumablesHtml = `<div class="p-3 rounded-xl bg-slate-900/90 border border-sky-500/30 space-y-2 mb-3"><div class="text-xs font-bold text-sky-300">🧪 主動消耗品</div><div class="flex items-center justify-between text-xs"><span>清醒脈衝解毒藥水（剩 ${State.consumables.elixir} 瓶｜+25 HP / +20 理智）</span><button id="modal-use-elixir" type="button" class="px-2.5 py-1 rounded bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold cursor-pointer">飲用</button></div><div class="text-xs text-slate-300">🧭 50/50 刪去羅盤：剩 ${State.consumables.compass} 枚（請直接在題目右上角點擊使用）</div><div class="text-xs text-slate-300">📜 字源透視卷軸：剩 ${State.consumables.scroll} 張（請直接在題目右上角點擊使用）</div></div>`;
+      document.getElementById('inv-list').innerHTML = consumablesHtml + State.inventory.map(id => `<div class="p-3 rounded-xl bg-slate-900/90 border border-emerald-500/25 flex items-start gap-3"><span class="text-2xl">${ITEMS_INFO[id].icon}</span><div><div class="font-bold text-emerald-300 text-sm">${ITEMS_INFO[id].name}</div><div class="text-xs text-slate-300 mt-0.5">${ITEMS_INFO[id].desc}</div></div></div>`).join('');
+      document.getElementById('modal-use-elixir').addEventListener('click', () => { useElixir(); document.getElementById('inv-modal').classList.add('hidden'); document.getElementById('inv-modal').classList.remove('flex'); });
+      document.getElementById('inv-modal').classList.remove('hidden'); document.getElementById('inv-modal').classList.add('flex');
+    });
+    document.getElementById('inv-close').addEventListener('click', () => { document.getElementById('inv-modal').classList.add('hidden'); document.getElementById('inv-modal').classList.remove('flex'); });
+    document.getElementById('btn-codex').addEventListener('click', () => { AudioEngine.click(); openCodexModal(); });
+    document.getElementById('codex-close').addEventListener('click', () => { document.getElementById('codex-modal').classList.add('hidden'); document.getElementById('codex-modal').classList.remove('flex'); });
+    document.getElementById('tab-vocab').addEventListener('click', () => { AudioEngine.click(); State.codexTab = 'vocab'; openCodexModal(); });
+    document.getElementById('tab-mistakes').addEventListener('click', () => { AudioEngine.click(); State.codexTab = 'mistakes'; openCodexModal(); });
+    document.getElementById('btn-mute').addEventListener('click', () => { AudioEngine.muted = !AudioEngine.muted; document.getElementById('btn-mute').textContent = AudioEngine.muted ? '🔇' : '🔊'; if (!AudioEngine.muted) AudioEngine.click(); });
+    window.onload = () => { loadProgress(); render(); };
+  </script>
+</body>
+</html>
